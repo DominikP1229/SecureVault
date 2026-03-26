@@ -1,0 +1,12 @@
+﻿<Window x:Class="SecureVault.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:local="clr-namespace:SecureVault"
+        Title="SecureVault"
+        Height="650" Width="1100"
+        Background="#1E1E1E">
+
+    <Grid>
+        <ContentControl x:Name="MainContent"/>
+    </Grid>
+</Window>

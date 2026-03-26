@@ -1,0 +1,35 @@
+﻿<UserControl x:Class="SecureVault.Views.HistoryView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:local="clr-namespace:SecureVault.Views"
+             Background="#1E1E1E">
+    <Grid Margin="10">
+
+        <StackPanel>
+
+            <TextBlock Text="Password History"
+               Foreground="White"
+               FontSize="20"
+               Margin="5"/>
+
+            <ListView Margin="5">
+
+                <ListView.View>
+                    <GridView>
+                        <GridViewColumn Header="Date" Width="150"/>
+                        <GridViewColumn Header="Password" Width="200"/>
+                    </GridView>
+                </ListView.View>
+
+                <!-- MOCK -->
+                <ListViewItem Content="2024-01-01   ******"/>
+                <ListViewItem Content="2024-02-01   ******"/>
+
+            </ListView>
+
+        </StackPanel>
+
+    </Grid>
+</UserControl>

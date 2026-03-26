@@ -1,0 +1,29 @@
+﻿<UserControl x:Class="SecureVault.Views.CategoriesView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:local="clr-namespace:SecureVault.Views"
+             Background="#1E1E1E">
+    <Grid Margin="10">
+
+        <StackPanel>
+
+            <TextBlock Text="Categories"
+               Foreground="White"
+               FontSize="20"/>
+
+            <ListBox Margin="5">
+                <ListBoxItem Content="Social"/>
+                <ListBoxItem Content="Work"/>
+                <ListBoxItem Content="Finance"/>
+            </ListBox>
+
+            <TextBox Margin="5"/>
+
+            <Button Content="Add Category" Margin="5"/>
+
+        </StackPanel>
+
+    </Grid>
+</UserControl>

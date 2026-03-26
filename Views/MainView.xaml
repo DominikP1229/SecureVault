@@ -1,0 +1,181 @@
+﻿<UserControl x:Class="SecureVault.Views.MainView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:sys="clr-namespace:System;assembly=mscorlib"
+             xmlns:model="clr-namespace:SecureVault.Model"
+             Background="#1E1E1E">
+
+    <!-- ================= STYLES ================= -->
+    <UserControl.Resources>
+
+        <!-- BUTTON -->
+        <Style TargetType="Button">
+            <Setter Property="Background" Value="#3A3A3D"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="Padding" Value="10,5"/>
+            <Setter Property="Margin" Value="5"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="#505053"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+
+        <!-- TEXTBOX -->
+        <Style TargetType="TextBox">
+            <Setter Property="Background" Value="#2D2D30"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="BorderBrush" Value="#555"/>
+            <Setter Property="Padding" Value="5"/>
+        </Style>
+
+        <!-- PASSWORDBOX -->
+        <Style TargetType="PasswordBox">
+            <Setter Property="Background" Value="#2D2D30"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="BorderBrush" Value="#555"/>
+            <Setter Property="Padding" Value="5"/>
+        </Style>
+
+        <!-- COMBOBOX -->
+        <Style TargetType="ComboBox">
+            <Setter Property="Background" Value="#2D2D30"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="BorderBrush" Value="#555"/>
+        </Style>
+
+        <!-- DATAGRID -->
+        <Style TargetType="DataGrid">
+            <Setter Property="Background" Value="#2D2D30"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="RowBackground" Value="#2D2D30"/>
+            <Setter Property="AlternatingRowBackground" Value="#252526"/>
+            <Setter Property="GridLinesVisibility" Value="None"/>
+            <Setter Property="HeadersVisibility" Value="Column"/>
+            <Setter Property="IsReadOnly" Value="True"/>
+            <Setter Property="CanUserAddRows" Value="False"/>
+        </Style>
+
+        <!-- DATAGRID ROW -->
+        <Style TargetType="DataGridRow">
+            <Setter Property="Background" Value="#2D2D30"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Style.Triggers>
+                <Trigger Property="IsSelected" Value="True">
+                    <Setter Property="Background" Value="#007ACC"/>
+                </Trigger>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="#3A3A3D"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+
+        <!-- DATAGRID HEADER -->
+        <Style TargetType="DataGridColumnHeader">
+            <Setter Property="Background" Value="#3A3A3D"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+        </Style>
+
+    </UserControl.Resources>
+
+    <!-- ================= LAYOUT ================= -->
+    <Grid Margin="10">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="2*" MinWidth="400"/>
+            <ColumnDefinition Width="3*" MinWidth="450"/>
+        </Grid.ColumnDefinitions>
+
+        <!-- ================= LEFT SIDE ================= -->
+        <DockPanel Grid.Column="0" LastChildFill="True">
+
+            <!-- SEARCH + FILTER -->
+            <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="0,0,0,5">
+                <TextBox Width="200" Text="Search..."/>
+                <ComboBox Width="150">
+                    <ComboBoxItem Content="All"/>
+                    <ComboBoxItem Content="Social"/>
+                    <ComboBoxItem Content="Work"/>
+                </ComboBox>
+            </StackPanel>
+
+            <!-- DATA GRID -->
+            <DataGrid AutoGenerateColumns="False" Margin="0,0,0,5" VerticalAlignment="Stretch">
+                <DataGrid.Columns>
+                    <DataGridTextColumn Header="Title" Binding="{Binding Title}" Width="*"/>
+                    <DataGridTextColumn Header="Username" Binding="{Binding Username}" Width="*"/>
+                    <DataGridTextColumn Header="Category" Binding="{Binding Category}" Width="*"/>
+                </DataGrid.Columns>
+
+                <!-- MOCK DATA -->
+                <DataGrid.ItemsSource>
+                    <x:Array Type="{x:Type model:Credential}">
+                        <model:Credential Title="Facebook" Username="user123" Category="Social"/>
+                        <model:Credential Title="Bank" Username="bankLogin" Category="Finance"/>
+                        <model:Credential Title="GitHub" Username="devUser" Category="Work"/>
+                    </x:Array>
+                </DataGrid.ItemsSource>
+            </DataGrid>
+
+            <!-- CRUD BUTTONS -->
+            <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,10,0,0">
+                <Button Content="Add" Width="80"/>
+                <Button Content="Edit" Width="80"/>
+                <Button Content="Delete" Width="80"/>
+                <Button Content="Categories" Width="100"/>
+            </StackPanel>
+
+        </DockPanel>
+
+        <!-- ================= RIGHT SIDE (DETAILS FORM) ================= -->
+        <Border Grid.Column="1"
+                Background="#2D2D30"
+                CornerRadius="10"
+                Padding="15"
+                Margin="10,0,0,0">
+            <ScrollViewer VerticalScrollBarVisibility="Auto">
+                <StackPanel>
+
+                    <TextBlock Text="Details" Foreground="White" FontSize="18" Margin="0,0,0,10"/>
+
+                    <TextBlock Text="Title" Foreground="White"/>
+                    <TextBox Margin="0,5,0,10"/>
+
+                    <TextBlock Text="Username" Foreground="White"/>
+                    <TextBox Margin="0,5,0,10"/>
+
+                    <TextBlock Text="Password" Foreground="White"/>
+                    <PasswordBox Margin="0,5,0,10"/>
+
+                    <!-- PASSWORD STRENGTH -->
+                    <ProgressBar Height="8" Value="60" Margin="0,0,0,10"/>
+
+                    <Button Content="Generate Password"/>
+
+                    <!-- COPY BUTTONS -->
+                    <StackPanel Orientation="Horizontal">
+                        <Button Content="Copy Username"/>
+                        <Button Content="Copy Password"/>
+                        <Button Content="Copy URL"/>
+                    </StackPanel>
+
+                    <TextBlock Text="Website" Foreground="White"/>
+                    <TextBox Margin="0,5,0,10"/>
+
+                    <TextBlock Text="Notes" Foreground="White"/>
+                    <TextBox Height="80" AcceptsReturn="True" Margin="0,5,0,10"/>
+
+                    <!-- SAVE / CANCEL -->
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,15,0,0">
+                        <Button Content="Save" Width="80"/>
+                        <Button Content="Cancel" Width="80"/>
+                    </StackPanel>
+
+                </StackPanel>
+            </ScrollViewer>
+        </Border>
+
+    </Grid>
+</UserControl>
