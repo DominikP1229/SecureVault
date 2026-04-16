@@ -24,5 +24,24 @@ namespace SecureVault.Views
         {
             InitializeComponent();
         }
+        private void Close_Click(object sender, RoutedEventArgs e)
+        {
+            var parent = this.Parent as FrameworkElement;
+
+            while (parent != null && parent.Name != "SubViewContainer")
+            {
+                parent = parent.Parent as FrameworkElement;
+            }
+
+            if (parent != null)
+            {
+                parent.Visibility = Visibility.Collapsed;
+
+                if (parent is Border border && border.Child is ContentControl content)
+                {
+                    content.Content = null;
+                }
+            }
+        }
     }
 }

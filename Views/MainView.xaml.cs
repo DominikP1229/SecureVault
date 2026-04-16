@@ -1,4 +1,6 @@
-﻿using System;
+﻿using SecureVault.ViewModel;
+using SecureVault.Views;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -23,6 +25,24 @@ namespace SecureVault.Views
         public MainView()
         {
             InitializeComponent();
+            DataContext = new MainViewModel();
+        }
+        private void OpenCategories(object sender, RoutedEventArgs e)
+        {
+            SubViewContent.Content = new CategoriesView();
+            SubViewContainer.Visibility = Visibility.Visible;
+        }
+
+        private void OpenHistory(object sender, RoutedEventArgs e)
+        {
+            SubViewContent.Content = new HistoryView();
+            SubViewContainer.Visibility = Visibility.Visible;
+        }
+
+        public void CloseSubView()
+        {
+            SubViewContainer.Visibility = Visibility.Collapsed;
+            SubViewContent.Content = null;
         }
     }
-}
+    }
