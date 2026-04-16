@@ -168,6 +168,9 @@
                     <TextBlock Text="Category" Foreground="White" FontSize="18" Margin="0,0,0,10"/>
                     <TextBox Text="{Binding Category}" Margin="0,0,0,10"/>
 
+                    <TextBlock Text="Password" Foreground="White" FontSize="18" Margin="0,0,0,10"/>
+                    <TextBox Text="{Binding Password}" Margin="0,0,0,10"/>
+
                     <!-- ERRORS -->
                     <TextBlock Text="{Binding ErrorMessage}" Foreground="White" Margin="0,0,0,10"/>
 
