@@ -19,15 +19,14 @@
             <!-- SEARCH + FILTER -->
             <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="0,0,0,5">
                 <TextBox Width="200" Text="Search..."/>
-                <ComboBox Width="150">
-                    <ComboBoxItem Content="All"/>
-                    <ComboBoxItem Content="Social"/>
-                    <ComboBoxItem Content="Work"/>
-                </ComboBox>
+                <ComboBox Width="150"
+                          ItemsSource="{Binding FilterCategories}"
+                          SelectedItem="{Binding SelectedFilterCategory}"
+                          DisplayMemberPath="CategoryType"/>
             </StackPanel>
 
             <!-- DATA GRID -->
-            <DataGrid AutoGenerateColumns="False" ItemsSource="{Binding Credentials}" SelectedItem="{Binding SelectedCredential}" Margin="0,0,0,5" VerticalAlignment="Stretch" SelectionChanged="DataGrid_SelectionChanged">
+            <DataGrid AutoGenerateColumns="False" ItemsSource="{Binding FilteredCredentials}" SelectedItem="{Binding SelectedCredential}" Margin="0,0,0,5" VerticalAlignment="Stretch" SelectionChanged="DataGrid_SelectionChanged">
                 <DataGrid.Columns>
                     <DataGridTextColumn Header="Title" Binding="{Binding Title}" Width="*"/>
                     <DataGridTextColumn Header="Username" Binding="{Binding Username}" Width="*"/>

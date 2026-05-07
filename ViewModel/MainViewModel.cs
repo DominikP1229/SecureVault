@@ -4,6 +4,7 @@ using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using System.Windows.Data;
 
 namespace SecureVault.ViewModel
 {
@@ -11,6 +12,27 @@ namespace SecureVault.ViewModel
     {
         public ObservableCollection<Credential> Credentials { get; set; }
             = new ObservableCollection<Credential>();
+
+        public ObservableCollection<Category> Categories => CategoryStore.Categories;
+
+        public ObservableCollection<Category> FilterCategories { get; } = new()
+        {
+            new Category { CategoryType = "All" }
+        };
+
+        public ICollectionView FilteredCredentials { get; }
+
+        private Category? _selectedFilterCategory;
+        public Category? SelectedFilterCategory
+        {
+            get => _selectedFilterCategory;
+            set
+            {
+                _selectedFilterCategory = value;
+                OnPropertyChanged();
+                FilteredCredentials.Refresh();
+            }
+        }
 
         private Credential? _selectedCredential;
         public Credential? SelectedCredential
@@ -84,11 +106,47 @@ namespace SecureVault.ViewModel
 
         public MainViewModel()
         {
+            foreach (var category in Categories)
+            {
+                FilterCategories.Add(category);
+            }
+
+            Categories.CollectionChanged += (_, e) =>
+            {
+                if (e.NewItems == null)
+                {
+                    return;
+                }
+
+                foreach (Category category in e.NewItems)
+                {
+                    FilterCategories.Add(category);
+                }
+            };
+
             AddCommand = new RelayCommand(Add);
             DeleteCommand = new RelayCommand(Delete, () => SelectedCredential != null);
             EditCommand = new RelayCommand(Edit, () => SelectedCredential != null);
 
             SeedData();
+            FilteredCredentials = CollectionViewSource.GetDefaultView(Credentials);
+            FilteredCredentials.Filter = FilterCredential;
+            SelectedFilterCategory = FilterCategories.FirstOrDefault();
+        }
+
+        private bool FilterCredential(object item)
+        {
+            if (item is not Credential credential)
+            {
+                return false;
+            }
+
+            if (SelectedFilterCategory == null || SelectedFilterCategory.CategoryType == "All")
+            {
+                return true;
+            }
+
+            return credential.Category == SelectedFilterCategory.CategoryType;
         }
         private void SeedData()
         {

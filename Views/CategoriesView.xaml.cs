@@ -12,6 +12,8 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
+using SecureVault.Model.Services;
+using SecureVault.ViewModel;
 
 namespace SecureVault.Views
 {
@@ -20,10 +22,40 @@ namespace SecureVault.Views
     /// </summary>
     public partial class CategoriesView : UserControl
     {
+        private readonly MainViewModel _viewModel;
+
         public CategoriesView()
+            : this(new MainViewModel())
         {
-            InitializeComponent();
         }
+
+        public CategoriesView(MainViewModel viewModel)
+        {
+            _viewModel = viewModel;
+            InitializeComponent();
+            DataContext = _viewModel;
+        }
+
+        private void AddCategory_Click(object sender, RoutedEventArgs e)
+        {
+            var categoryType = CategoryNameBox.Text.Trim();
+
+            if (string.IsNullOrWhiteSpace(categoryType))
+            {
+                MessageBox.Show("Nazwa kategorii jest wymagana.", "Kategorie", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
+            if (CategoryStore.Exists(categoryType))
+            {
+                MessageBox.Show("Taka kategoria już istnieje.", "Kategorie", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
+            CategoryStore.Add(categoryType);
+            CategoryNameBox.Clear();
+        }
+
         private void Close_Click(object sender, RoutedEventArgs e)
         {
             var parent = this.Parent as FrameworkElement;

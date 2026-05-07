@@ -77,7 +77,10 @@ namespace SecureVault.Views
 
         private void OpenCategories(object sender, RoutedEventArgs e)
         {
-            SubViewContent.Content = new CategoriesView();
+            if (DataContext is MainViewModel viewModel)
+            {
+                SubViewContent.Content = new CategoriesView(viewModel);
+            }
             SubViewContainer.Visibility = Visibility.Visible;
         }
 
