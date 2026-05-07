@@ -23,10 +23,58 @@ namespace SecureVault.Views
     public partial class MainView : UserControl
     {
         public MainView()
+            : this(new MainViewModel())
+        {
+        }
+
+        public MainView(MainViewModel viewModel)
         {
             InitializeComponent();
-            DataContext = new MainViewModel();
+            DataContext = viewModel;
         }
+
+        private void DataGrid_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+        }
+
+        private void Add_Click(object sender, RoutedEventArgs e)
+        {
+            if (DataContext is MainViewModel viewModel &&
+                this.Parent is Grid parentGrid &&
+                parentGrid.Parent is MainWindow mainWindow)
+            {
+                mainWindow.SwitchView(new AddPasswordView(viewModel));
+            }
+        }
+
+        private void Edit_Click(object sender, RoutedEventArgs e)
+        {
+            if (DataContext is MainViewModel viewModel && viewModel.EditCommand.CanExecute(null))
+            {
+                viewModel.EditCommand.Execute(null);
+            }
+        }
+
+        private void Delete_Click(object sender, RoutedEventArgs e)
+        {
+            if (DataContext is MainViewModel viewModel && viewModel.DeleteCommand.CanExecute(null))
+            {
+                viewModel.DeleteCommand.Execute(null);
+            }
+        }
+
+        private void Copy_Click(object sender, RoutedEventArgs e)
+        {
+        }
+
+        private void Logout_Click(object sender, RoutedEventArgs e)
+        {
+            if (this.Parent is Grid parentGrid && parentGrid.Parent is MainWindow mainWindow)
+            {
+                mainWindow.SwitchView(new LoginView());
+            }
+        }
+
         private void OpenCategories(object sender, RoutedEventArgs e)
         {
             SubViewContent.Content = new CategoriesView();

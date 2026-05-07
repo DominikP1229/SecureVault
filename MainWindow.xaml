@@ -6,7 +6,6 @@
         Height="800" Width="1400"
         Background="#1E1E1E">
 
-    <Grid>
-        <ContentControl x:Name="MainContent"/>
+    <Grid x:Name="MainGrid">
     </Grid>
 </Window>

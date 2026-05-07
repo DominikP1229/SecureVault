@@ -1,4 +1,5 @@
 ﻿using SecureVault.Model;
+using SecureVault.Model.Services;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Linq;
@@ -11,8 +12,8 @@ namespace SecureVault.ViewModel
         public ObservableCollection<Credential> Credentials { get; set; }
             = new ObservableCollection<Credential>();
 
-        private Credential _selectedCredential;
-        public Credential SelectedCredential
+        private Credential? _selectedCredential;
+        public Credential? SelectedCredential
         {
             get => _selectedCredential;
             set
@@ -28,32 +29,48 @@ namespace SecureVault.ViewModel
                     Title = value.Title;
                     Username = value.Username;
                     Category = value.Category;
+                    Password = value.EncryptedPassword;
+                    Notes = value.Description;
                 }
             }
         }
 
-        private string _title;
+        private string _title = string.Empty;
         public string Title
         {
             get => _title;
             set { _title = value; OnPropertyChanged(); }
         }
 
-        private string _username;
+        private string _username = string.Empty;
         public string Username
         {
             get => _username;
             set { _username = value; OnPropertyChanged(); }
         }
 
-        private string _category;
+        private string _category = string.Empty;
         public string Category
         {
             get => _category;
             set { _category = value; OnPropertyChanged(); }
         }
 
-        private string _errorMessage;
+        private string _password = string.Empty;
+        public string Password
+        {
+            get => _password;
+            set { _password = value; OnPropertyChanged(); }
+        }
+
+        private string _notes = string.Empty;
+        public string Notes
+        {
+            get => _notes;
+            set { _notes = value; OnPropertyChanged(); }
+        }
+
+        private string _errorMessage = string.Empty;
         public string ErrorMessage
         {
             get => _errorMessage;
@@ -117,7 +134,9 @@ namespace SecureVault.ViewModel
             {
                 Title = Title,
                 Username = Username,
-                Category = Category
+                Category = Category,
+                EncryptedPassword = Password,
+                Description = Notes
             });
 
             ClearForm();
@@ -149,6 +168,8 @@ namespace SecureVault.ViewModel
             SelectedCredential.Title = Title;
             SelectedCredential.Username = Username;
             SelectedCredential.Category = Category;
+            SelectedCredential.EncryptedPassword = Password;
+            SelectedCredential.Description = Notes;
 
             OnPropertyChanged(nameof(Credentials));
         }
@@ -158,9 +179,11 @@ namespace SecureVault.ViewModel
             Title = "";
             Username = "";
             Category = "";
+            Password = "";
+            Notes = "";
         }
 
-        public event PropertyChangedEventHandler PropertyChanged;
+        public event PropertyChangedEventHandler? PropertyChanged;
         protected void OnPropertyChanged([CallerMemberName] string? name = null)
             => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
     }

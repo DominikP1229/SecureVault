@@ -20,12 +20,12 @@ namespace SecureVault
         public MainWindow()
         {
             InitializeComponent();
-            MainContent.Content = new LoginView(this);
+            MainGrid.Children.Add(new LoginView());
         }
-
-        public void ShowMainView()
+        public void SwitchView(UIElement newView)
         {
-            MainContent.Content = new MainView();
+            MainGrid.Children.Clear();
+            MainGrid.Children.Add(newView);
         }
     }
 }

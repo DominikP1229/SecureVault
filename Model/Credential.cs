@@ -8,42 +8,17 @@ using System.Threading.Tasks;
 
 namespace SecureVault.Model
 {
-    /*public class Credential
+    public class Credential
     {
         public Credential()
         {
         }
-
-        public string? Title { get; set; }
-        public string? Username { get; set; }
-        public string? Category { get; set; }
-    }*/
-    public class Credential : INotifyPropertyChanged
-    {
-        private string _title;
-        public string? Title
-        {
-            get => _title;
-            set { _title = value; OnPropertyChanged(); }
-        }
-
-        private string _username;
-        public string? Username
-        {
-            get => _username;
-            set { _username = value; OnPropertyChanged(); }
-        }
-
-        private string _category;
-        public string? Category
-        {
-            get => _category;
-            set { _category = value; OnPropertyChanged(); }
-        }
-
-        public event PropertyChangedEventHandler PropertyChanged;
-
-        protected void OnPropertyChanged([CallerMemberName] string name = null)
-            => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
+        public Guid Id { get; init; } = Guid.NewGuid();
+        public string Account {  get; set; } = string.Empty;
+        public string Title { get; set; } = string.Empty;
+        public string Username { get; set; } = string.Empty;
+        public string Category { get; set; } = string.Empty ;
+        public string EncryptedPassword { get; set; } = string.Empty;
+        public string Description {  get; set; } = string.Empty;
     }
 }
