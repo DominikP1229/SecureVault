@@ -25,5 +25,10 @@ namespace SecureVault.Model.Services
                 CategoryType = categoryType
             });
         }
+
+        public static void Remove(Category category)
+        {
+            Categories.Remove(category);
+        }
     }
 }

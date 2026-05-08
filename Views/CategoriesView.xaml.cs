@@ -12,6 +12,7 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
+using SecureVault.Model;
 using SecureVault.Model.Services;
 using SecureVault.ViewModel;
 
@@ -54,6 +55,17 @@ namespace SecureVault.Views
 
             CategoryStore.Add(categoryType);
             CategoryNameBox.Clear();
+        }
+
+        private void DeleteCategory_Click(object sender, RoutedEventArgs e)
+        {
+            if (CategoryListBox.SelectedItem is not Category category)
+            {
+                MessageBox.Show("Wybierz kategorię do usunięcia.", "Kategorie", MessageBoxButton.OK, MessageBoxImage.Information);
+                return;
+            }
+
+            CategoryStore.Remove(category);
         }
 
         private void Close_Click(object sender, RoutedEventArgs e)

@@ -22,6 +22,7 @@ namespace SecureVault.Views
     public partial class AddPasswordView: UserControl
     {
         private readonly MainViewModel _viewModel;
+        private readonly bool _isEditMode;
 
         public AddPasswordView()
             : this(new MainViewModel())
@@ -29,9 +30,15 @@ namespace SecureVault.Views
         }
 
         public AddPasswordView(MainViewModel viewModel)
+            : this(viewModel, false)
+        {
+        }
+
+        public AddPasswordView(MainViewModel viewModel, bool isEditMode)
         {
             InitializeComponent();
             _viewModel = viewModel;
+            _isEditMode = isEditMode;
             DataContext = _viewModel;
         }
 
@@ -41,6 +48,21 @@ namespace SecureVault.Views
 
         private void Save_Click(object sender, RoutedEventArgs e)
         {
+            if (_isEditMode)
+            {
+                if (_viewModel.EditCommand.CanExecute(null))
+                {
+                    _viewModel.EditCommand.Execute(null);
+
+                    if (string.IsNullOrWhiteSpace(_viewModel.ErrorMessage))
+                    {
+                        ReturnToMainView();
+                    }
+                }
+
+                return;
+            }
+
             var countBeforeSave = _viewModel.Credentials.Count;
 
             if (_viewModel.AddCommand.CanExecute(null))

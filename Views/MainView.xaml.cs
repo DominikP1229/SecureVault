@@ -1,25 +1,11 @@
-﻿using SecureVault.ViewModel;
-using SecureVault.Views;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using SecureVault.Model;
+using SecureVault.ViewModel;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
 using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
 
 namespace SecureVault.Views
 {
-    /// <summary>
-    /// Logika interakcji dla klasy MainView.xaml
-    /// </summary>
     public partial class MainView : UserControl
     {
         public MainView()
@@ -43,21 +29,59 @@ namespace SecureVault.Views
                 this.Parent is Grid parentGrid &&
                 parentGrid.Parent is MainWindow mainWindow)
             {
+                viewModel.SelectedCredential = null;
+                viewModel.ClearForm();
                 mainWindow.SwitchView(new AddPasswordView(viewModel));
+            }
+        }
+
+        private void PasswordGrid_MouseDoubleClick(object sender, MouseButtonEventArgs e)
+        {
+            if (DataContext is MainViewModel { SelectedCredential: not null } viewModel &&
+                this.Parent is Grid parentGrid &&
+                parentGrid.Parent is MainWindow mainWindow)
+            {
+                mainWindow.SwitchView(new PasswordDetailsView(viewModel, viewModel.SelectedCredential));
             }
         }
 
         private void Edit_Click(object sender, RoutedEventArgs e)
         {
-            if (DataContext is MainViewModel viewModel && viewModel.EditCommand.CanExecute(null))
+            if (DataContext is not MainViewModel viewModel)
             {
-                viewModel.EditCommand.Execute(null);
+                return;
+            }
+
+            if (sender is FrameworkElement { DataContext: Credential credential })
+            {
+                viewModel.SelectedCredential = credential;
+            }
+
+            if (viewModel.SelectedCredential == null)
+            {
+                MessageBox.Show("Wybierz wpis do edycji.", "Edycja", MessageBoxButton.OK, MessageBoxImage.Information);
+                return;
+            }
+
+            if (this.Parent is Grid parentGrid && parentGrid.Parent is MainWindow mainWindow)
+            {
+                mainWindow.SwitchView(new AddPasswordView(viewModel, true));
             }
         }
 
         private void Delete_Click(object sender, RoutedEventArgs e)
         {
-            if (DataContext is MainViewModel viewModel && viewModel.DeleteCommand.CanExecute(null))
+            if (DataContext is not MainViewModel viewModel)
+            {
+                return;
+            }
+
+            if (sender is FrameworkElement { DataContext: Credential credential })
+            {
+                viewModel.SelectedCredential = credential;
+            }
+
+            if (viewModel.DeleteCommand.CanExecute(null))
             {
                 viewModel.DeleteCommand.Execute(null);
             }
@@ -65,6 +89,20 @@ namespace SecureVault.Views
 
         private void Copy_Click(object sender, RoutedEventArgs e)
         {
+            if (DataContext is not MainViewModel viewModel || viewModel.SelectedCredential == null)
+            {
+                MessageBox.Show("Wybierz wpis, z którego chcesz skopiować hasło.", "Kopiowanie", MessageBoxButton.OK, MessageBoxImage.Information);
+                return;
+            }
+
+            if (string.IsNullOrEmpty(viewModel.SelectedCredential.EncryptedPassword))
+            {
+                MessageBox.Show("Wybrany wpis nie ma zapisanego hasła.", "Kopiowanie", MessageBoxButton.OK, MessageBoxImage.Information);
+                return;
+            }
+
+            Clipboard.SetText(viewModel.SelectedCredential.EncryptedPassword);
+            MessageBox.Show("Hasło skopiowane do schowka.", "Kopiowanie", MessageBoxButton.OK, MessageBoxImage.Information);
         }
 
         private void Logout_Click(object sender, RoutedEventArgs e)
@@ -81,6 +119,7 @@ namespace SecureVault.Views
             {
                 SubViewContent.Content = new CategoriesView(viewModel);
             }
+
             SubViewContainer.Visibility = Visibility.Visible;
         }
 
@@ -96,4 +135,4 @@ namespace SecureVault.Views
             SubViewContent.Content = null;
         }
     }
-    }
+}

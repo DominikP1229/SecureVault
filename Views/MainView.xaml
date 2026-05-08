@@ -18,7 +18,7 @@
 
             <!-- SEARCH + FILTER -->
             <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="0,0,0,5">
-                <TextBox Width="200" Text="Search..."/>
+                <TextBox Width="200" Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"/>
                 <ComboBox Width="150"
                           ItemsSource="{Binding FilterCategories}"
                           SelectedItem="{Binding SelectedFilterCategory}"
@@ -26,7 +26,7 @@
             </StackPanel>
 
             <!-- DATA GRID -->
-            <DataGrid AutoGenerateColumns="False" ItemsSource="{Binding FilteredCredentials}" SelectedItem="{Binding SelectedCredential}" Margin="0,0,0,5" VerticalAlignment="Stretch" SelectionChanged="DataGrid_SelectionChanged">
+            <DataGrid AutoGenerateColumns="False" ItemsSource="{Binding FilteredCredentials}" SelectedItem="{Binding SelectedCredential}" Margin="0,0,0,5" VerticalAlignment="Stretch" SelectionChanged="DataGrid_SelectionChanged" MouseDoubleClick="PasswordGrid_MouseDoubleClick">
                 <DataGrid.Columns>
                     <DataGridTextColumn Header="Title" Binding="{Binding Title}" Width="*"/>
                     <DataGridTextColumn Header="Username" Binding="{Binding Username}" Width="*"/>

@@ -51,13 +51,15 @@
            FontWeight="Bold"
            Margin="0,0,0,15"/>
 
-            <ListBox Margin="5"
+            <ListBox x:Name="CategoryListBox"
+                     Margin="5"
                      ItemsSource="{Binding Categories}"
                      DisplayMemberPath="CategoryType"/>
 
             <TextBox x:Name="CategoryNameBox" Margin="5"/>
 
             <Button Content="Add Category" Margin="5" Click="AddCategory_Click"/>
+                    <Button Content="Delete Category" Margin="5" Click="DeleteCategory_Click"/>
                     <Button Content="Cancel" Margin="5" Click="Close_Click"/>
 
                 </StackPanel>

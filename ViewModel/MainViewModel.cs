@@ -10,6 +10,9 @@ namespace SecureVault.ViewModel
 {
     public class MainViewModel : INotifyPropertyChanged
     {
+        private readonly PasswordGenerator _passwordGenerator = new();
+        private readonly PasswordStrengthService _passwordStrengthService = new();
+
         public ObservableCollection<Credential> Credentials { get; set; }
             = new ObservableCollection<Credential>();
 
@@ -34,6 +37,18 @@ namespace SecureVault.ViewModel
             }
         }
 
+        private string _searchText = string.Empty;
+        public string SearchText
+        {
+            get => _searchText;
+            set
+            {
+                _searchText = value;
+                OnPropertyChanged();
+                FilteredCredentials.Refresh();
+            }
+        }
+
         private Credential? _selectedCredential;
         public Credential? SelectedCredential
         {
@@ -52,6 +67,7 @@ namespace SecureVault.ViewModel
                     Username = value.Username;
                     Category = value.Category;
                     Password = value.EncryptedPassword;
+                    Website = value.Account;
                     Notes = value.Description;
                 }
             }
@@ -82,7 +98,26 @@ namespace SecureVault.ViewModel
         public string Password
         {
             get => _password;
-            set { _password = value; OnPropertyChanged(); }
+            set
+            {
+                _password = value;
+                PasswordStrength = _passwordStrengthService.EvaluateStrength(_password);
+                OnPropertyChanged();
+            }
+        }
+
+        private int _passwordStrength;
+        public int PasswordStrength
+        {
+            get => _passwordStrength;
+            set { _passwordStrength = value; OnPropertyChanged(); }
+        }
+
+        private string _website = string.Empty;
+        public string Website
+        {
+            get => _website;
+            set { _website = value; OnPropertyChanged(); }
         }
 
         private string _notes = string.Empty;
@@ -103,6 +138,7 @@ namespace SecureVault.ViewModel
         public RelayCommand AddCommand { get; }
         public RelayCommand DeleteCommand { get; }
         public RelayCommand EditCommand { get; }
+        public RelayCommand GeneratePasswordCommand { get; }
 
         public MainViewModel()
         {
@@ -113,25 +149,42 @@ namespace SecureVault.ViewModel
 
             Categories.CollectionChanged += (_, e) =>
             {
-                if (e.NewItems == null)
+                if (e.NewItems != null)
                 {
-                    return;
+                    foreach (Category category in e.NewItems)
+                    {
+                        FilterCategories.Add(category);
+                    }
                 }
 
-                foreach (Category category in e.NewItems)
+                if (e.OldItems != null)
                 {
-                    FilterCategories.Add(category);
+                    foreach (Category category in e.OldItems)
+                    {
+                        FilterCategories.Remove(category);
+
+                        if (SelectedFilterCategory == category)
+                        {
+                            SelectedFilterCategory = FilterCategories.FirstOrDefault();
+                        }
+                    }
                 }
             };
 
             AddCommand = new RelayCommand(Add);
             DeleteCommand = new RelayCommand(Delete, () => SelectedCredential != null);
             EditCommand = new RelayCommand(Edit, () => SelectedCredential != null);
+            GeneratePasswordCommand = new RelayCommand(GeneratePassword);
 
             SeedData();
             FilteredCredentials = CollectionViewSource.GetDefaultView(Credentials);
             FilteredCredentials.Filter = FilterCredential;
             SelectedFilterCategory = FilterCategories.FirstOrDefault();
+        }
+
+        private void GeneratePassword()
+        {
+            Password = _passwordGenerator.Generate(16, true);
         }
 
         private bool FilterCredential(object item)
@@ -143,10 +196,24 @@ namespace SecureVault.ViewModel
 
             if (SelectedFilterCategory == null || SelectedFilterCategory.CategoryType == "All")
             {
+                return MatchesSearch(credential);
+            }
+
+            return credential.Category == SelectedFilterCategory.CategoryType && MatchesSearch(credential);
+        }
+
+        private bool MatchesSearch(Credential credential)
+        {
+            if (string.IsNullOrWhiteSpace(SearchText))
+            {
                 return true;
             }
 
-            return credential.Category == SelectedFilterCategory.CategoryType;
+            var searchText = SearchText.Trim();
+            return credential.Title.Contains(searchText, System.StringComparison.OrdinalIgnoreCase)
+                || credential.Username.Contains(searchText, System.StringComparison.OrdinalIgnoreCase)
+                || credential.Category.Contains(searchText, System.StringComparison.OrdinalIgnoreCase)
+                || credential.Account.Contains(searchText, System.StringComparison.OrdinalIgnoreCase);
         }
         private void SeedData()
         {
@@ -194,9 +261,11 @@ namespace SecureVault.ViewModel
                 Username = Username,
                 Category = Category,
                 EncryptedPassword = Password,
+                Account = Website,
                 Description = Notes
             });
 
+            FilteredCredentials.Refresh();
             ClearForm();
         }
 
@@ -214,6 +283,8 @@ namespace SecureVault.ViewModel
 
         private void Edit()
         {
+            ErrorMessage = "";
+
             if (SelectedCredential == null)
                 return;
 
@@ -227,17 +298,20 @@ namespace SecureVault.ViewModel
             SelectedCredential.Username = Username;
             SelectedCredential.Category = Category;
             SelectedCredential.EncryptedPassword = Password;
+            SelectedCredential.Account = Website;
             SelectedCredential.Description = Notes;
 
             OnPropertyChanged(nameof(Credentials));
+            FilteredCredentials.Refresh();
         }
 
-        private void ClearForm()
+        public void ClearForm()
         {
             Title = "";
             Username = "";
             Category = "";
             Password = "";
+            Website = "";
             Notes = "";
         }
 
