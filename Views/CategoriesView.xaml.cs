@@ -47,6 +47,12 @@ namespace SecureVault.Views
                 return;
             }
 
+            if (categoryType.Length < 2)
+            {
+                MessageBox.Show("Nazwa kategorii musi mieć co najmniej 2 znaki.", "Kategorie", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
             if (CategoryStore.Exists(categoryType))
             {
                 MessageBox.Show("Taka kategoria już istnieje.", "Kategorie", MessageBoxButton.OK, MessageBoxImage.Warning);
@@ -62,6 +68,12 @@ namespace SecureVault.Views
             if (CategoryListBox.SelectedItem is not Category category)
             {
                 MessageBox.Show("Wybierz kategorię do usunięcia.", "Kategorie", MessageBoxButton.OK, MessageBoxImage.Information);
+                return;
+            }
+
+            if (_viewModel.Credentials.Any(credential => credential.Category == category.CategoryType))
+            {
+                MessageBox.Show("Nie można usunąć kategorii używanej przez zapisane hasła.", "Kategorie", MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
 

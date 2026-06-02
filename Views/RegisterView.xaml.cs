@@ -38,9 +38,21 @@ namespace SecureVault.Views
                 return;
             }
 
+            if (login.Length < 3)
+            {
+                MessageBox.Show("Login musi mieć co najmniej 3 znaki.", "Rejestracja", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
             if (string.IsNullOrWhiteSpace(password))
             {
                 MessageBox.Show("Hasło jest wymagane.", "Rejestracja", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
+            if (password.Length < 8)
+            {
+                MessageBox.Show("Hasło musi mieć co najmniej 8 znaków.", "Rejestracja", MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
 

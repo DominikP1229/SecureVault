@@ -20,12 +20,26 @@ namespace SecureVault.Views
 
         private void CopyPassword_Click(object sender, RoutedEventArgs e)
         {
+            if (string.IsNullOrEmpty(_credential.EncryptedPassword))
+            {
+                MessageBox.Show("Ten wpis nie ma zapisanego hasła.", "Kopiowanie", MessageBoxButton.OK, MessageBoxImage.Information);
+                return;
+            }
+
             Clipboard.SetText(_credential.EncryptedPassword);
+            MessageBox.Show("Hasło skopiowane do schowka.", "Kopiowanie", MessageBoxButton.OK, MessageBoxImage.Information);
         }
 
         private void CopyUrl_Click(object sender, RoutedEventArgs e)
         {
+            if (string.IsNullOrEmpty(_credential.Account))
+            {
+                MessageBox.Show("Ten wpis nie ma zapisanego URL.", "Kopiowanie", MessageBoxButton.OK, MessageBoxImage.Information);
+                return;
+            }
+
             Clipboard.SetText(_credential.Account);
+            MessageBox.Show("URL skopiowany do schowka.", "Kopiowanie", MessageBoxButton.OK, MessageBoxImage.Information);
         }
 
         private void EditPassword_Click(object sender, RoutedEventArgs e)

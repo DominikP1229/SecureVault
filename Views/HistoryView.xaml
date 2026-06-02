@@ -1,4 +1,4 @@
-﻿<UserControl x:Class="SecureVault.Views.HistoryView"
+<UserControl x:Class="SecureVault.Views.HistoryView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
@@ -6,12 +6,9 @@
              xmlns:local="clr-namespace:SecureVault.Views"
              Background="#1E1E1E">
     <UserControl.Resources>
-
-        <!-- TŁO -->
         <SolidColorBrush x:Key="MainBackground" Color="#1E1E1E"/>
         <SolidColorBrush x:Key="CardBackground" Color="#FF2C2F33"/>
 
-        <!-- BUTTON -->
         <Style TargetType="Button">
             <Setter Property="Background" Value="#3A3A3D"/>
             <Setter Property="Foreground" Value="White"/>
@@ -26,55 +23,50 @@
             </Style.Triggers>
         </Style>
 
-        <!-- TEXT -->
         <Style TargetType="TextBlock">
             <Setter Property="Foreground" Value="White"/>
         </Style>
-        <Style TargetType="DataGrid">
-            <Setter Property="Background" Value="#1E293B"/>
-            <Setter Property="Foreground" Value="White"/>
-            <Setter Property="RowBackground" Value="#1E293B"/>
-            <Setter Property="AlternatingRowBackground" Value="#334155"/>
-            <Setter Property="GridLinesVisibility" Value="None"/>
-        </Style>
     </UserControl.Resources>
+
     <Grid Background="{StaticResource MainBackground}">
-
         <Border Background="{StaticResource CardBackground}"
-            CornerRadius="10"
-            Padding="20"
-            Margin="20">
+                CornerRadius="10"
+                Padding="20"
+                Margin="20">
             <Grid Margin="10">
+                <StackPanel>
+                    <Button Content="Close"
+                            HorizontalAlignment="Right"
+                            Click="Close_Click"/>
 
-        <StackPanel>
-            <Button Content="Close"
-        HorizontalAlignment="Right"
-        Click="Close_Click"/>
-            <TextBlock Text="Password History"
-               Foreground="White"
-               FontSize="24"
-               FontWeight="Bold"
-               Margin="0,0,0,15"/>
+                    <TextBlock Text="Password History"
+                               Foreground="White"
+                               FontSize="24"
+                               FontWeight="Bold"
+                               Margin="0,0,0,15"/>
 
-            <ListView Margin="5">
-
-                <ListView.View>
-                    <GridView>
-                        <GridViewColumn Header="Date" Width="150"/>
-                        <GridViewColumn Header="Password" Width="200"/>
-                    </GridView>
-                </ListView.View>
-
-                <!-- MOCK -->
-                <ListViewItem Content="2024-01-01   ******"/>
-                <ListViewItem Content="2024-02-01   ******"/>
-
-            </ListView>
-
-        </StackPanel>
-
-    </Grid>
+                    <DataGrid ItemsSource="{Binding HistoryItems}"
+                              AutoGenerateColumns="False"
+                              IsReadOnly="True"
+                              Margin="5"
+                              Height="250">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="Date"
+                                                Binding="{Binding ChangedDate, StringFormat={}{0:yyyy-MM-dd HH:mm}}"
+                                                Width="150"/>
+                            <DataGridTextColumn Header="Action"
+                                                Binding="{Binding Action}"
+                                                Width="120"/>
+                            <DataGridTextColumn Header="Credential"
+                                                Binding="{Binding CredentialTitle}"
+                                                Width="*"/>
+                            <DataGridTextColumn Header="Password"
+                                                Binding="{Binding MaskedPassword}"
+                                                Width="120"/>
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </StackPanel>
+            </Grid>
         </Border>
-
     </Grid>
 </UserControl>

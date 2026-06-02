@@ -13,7 +13,7 @@ namespace SecureVault.Model
         public Credential()
         {
         }
-        public Guid Id { get; init; } = Guid.NewGuid();
+        public Guid Id { get; set; } = Guid.NewGuid();
         public string Account {  get; set; } = string.Empty;
         public string Title { get; set; } = string.Empty;
         public string Username { get; set; } = string.Empty;

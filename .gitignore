@@ -364,3 +364,6 @@ FodyWeavers.xsd
 
 docs/
 .dotnet-cli/
+*.db
+*.db-shm
+*.db-wal

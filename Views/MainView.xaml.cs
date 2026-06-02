@@ -1,4 +1,5 @@
 using SecureVault.Model;
+using SecureVault.Model.Services;
 using SecureVault.ViewModel;
 using System.Windows;
 using System.Windows.Controls;
@@ -109,6 +110,7 @@ namespace SecureVault.Views
         {
             if (this.Parent is Grid parentGrid && parentGrid.Parent is MainWindow mainWindow)
             {
+                VaultSession.SignOut();
                 mainWindow.SwitchView(new LoginView());
             }
         }

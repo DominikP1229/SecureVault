@@ -1,5 +1,6 @@
-﻿using SecureVault.Model;
+using SecureVault.Model;
 using SecureVault.Model.Services;
+using System;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Linq;
@@ -13,9 +14,7 @@ namespace SecureVault.ViewModel
         private readonly PasswordGenerator _passwordGenerator = new();
         private readonly PasswordStrengthService _passwordStrengthService = new();
 
-        public ObservableCollection<Credential> Credentials { get; set; }
-            = new ObservableCollection<Credential>();
-
+        public ObservableCollection<Credential> Credentials { get; set; } = CredentialStore.Load();
         public ObservableCollection<Category> Categories => CategoryStore.Categories;
 
         public ObservableCollection<Category> FilterCategories { get; } = new()
@@ -33,7 +32,7 @@ namespace SecureVault.ViewModel
             {
                 _selectedFilterCategory = value;
                 OnPropertyChanged();
-                FilteredCredentials.Refresh();
+                FilteredCredentials?.Refresh();
             }
         }
 
@@ -45,7 +44,7 @@ namespace SecureVault.ViewModel
             {
                 _searchText = value;
                 OnPropertyChanged();
-                FilteredCredentials.Refresh();
+                FilteredCredentials?.Refresh();
             }
         }
 
@@ -134,7 +133,6 @@ namespace SecureVault.ViewModel
             set { _errorMessage = value; OnPropertyChanged(); }
         }
 
-        // COMMANDS
         public RelayCommand AddCommand { get; }
         public RelayCommand DeleteCommand { get; }
         public RelayCommand EditCommand { get; }
@@ -169,6 +167,8 @@ namespace SecureVault.ViewModel
                         }
                     }
                 }
+
+                FilteredCredentials?.Refresh();
             };
 
             AddCommand = new RelayCommand(Add);
@@ -176,7 +176,6 @@ namespace SecureVault.ViewModel
             EditCommand = new RelayCommand(Edit, () => SelectedCredential != null);
             GeneratePasswordCommand = new RelayCommand(GeneratePassword);
 
-            SeedData();
             FilteredCredentials = CollectionViewSource.GetDefaultView(Credentials);
             FilteredCredentials.Filter = FilterCredential;
             SelectedFilterCategory = FilterCategories.FirstOrDefault();
@@ -194,12 +193,11 @@ namespace SecureVault.ViewModel
                 return false;
             }
 
-            if (SelectedFilterCategory == null || SelectedFilterCategory.CategoryType == "All")
-            {
-                return MatchesSearch(credential);
-            }
+            var categoryMatches = SelectedFilterCategory == null
+                || SelectedFilterCategory.CategoryType == "All"
+                || credential.Category == SelectedFilterCategory.CategoryType;
 
-            return credential.Category == SelectedFilterCategory.CategoryType && MatchesSearch(credential);
+            return categoryMatches && MatchesSearch(credential);
         }
 
         private bool MatchesSearch(Credential credential)
@@ -210,60 +208,41 @@ namespace SecureVault.ViewModel
             }
 
             var searchText = SearchText.Trim();
-            return credential.Title.Contains(searchText, System.StringComparison.OrdinalIgnoreCase)
-                || credential.Username.Contains(searchText, System.StringComparison.OrdinalIgnoreCase)
-                || credential.Category.Contains(searchText, System.StringComparison.OrdinalIgnoreCase)
-                || credential.Account.Contains(searchText, System.StringComparison.OrdinalIgnoreCase);
+            return credential.Title.Contains(searchText, StringComparison.OrdinalIgnoreCase)
+                || credential.Username.Contains(searchText, StringComparison.OrdinalIgnoreCase)
+                || credential.Category.Contains(searchText, StringComparison.OrdinalIgnoreCase)
+                || credential.Account.Contains(searchText, StringComparison.OrdinalIgnoreCase);
         }
-        private void SeedData()
-        {
-            Credentials.Add(new Credential
-            {
-                Title = "Gmail",
-                Username = "jan.kowalski@gmail.com",
-                Category = "Email"
-            });
 
-            Credentials.Add(new Credential
-            {
-                Title = "Facebook",
-                Username = "janek123",
-                Category = "Social Media"
-            });
-
-            Credentials.Add(new Credential
-            {
-                Title = "Bank",
-                Username = "jan_k",
-                Category = "Finance"
-            });
-        }
         private void Add()
         {
-            ErrorMessage = "";
+            ErrorMessage = string.Empty;
 
-            // WALIDACJA
-            if (string.IsNullOrWhiteSpace(Title))
+            if (!ValidateCredential())
             {
-                ErrorMessage = "Title jest wymagany!";
                 return;
             }
 
-            if (Credentials.Any(c => c.Title == Title))
+            if (Credentials.Any(c =>
+                    c.Category.Equals(Category.Trim(), StringComparison.OrdinalIgnoreCase) &&
+                    c.Title.Equals(Title.Trim(), StringComparison.OrdinalIgnoreCase)))
             {
-                ErrorMessage = "Title musi być unikalny!";
+                ErrorMessage = "Title musi być unikalny w wybranej kategorii.";
                 return;
             }
 
-            Credentials.Add(new Credential
+            var credential = new Credential
             {
-                Title = Title,
-                Username = Username,
-                Category = Category,
+                Title = Title.Trim(),
+                Username = Username.Trim(),
+                Category = Category.Trim(),
                 EncryptedPassword = Password,
-                Account = Website,
-                Description = Notes
-            });
+                Account = Website.Trim(),
+                Description = Notes.Trim()
+            };
+
+            CredentialStore.Add(credential);
+            Credentials.Add(credential);
 
             FilteredCredentials.Refresh();
             ClearForm();
@@ -273,46 +252,109 @@ namespace SecureVault.ViewModel
         {
             if (SelectedCredential == null)
             {
-                ErrorMessage = "Wybierz element!";
+                ErrorMessage = "Wybierz element do usunięcia.";
                 return;
             }
 
+            CredentialStore.Remove(SelectedCredential);
             Credentials.Remove(SelectedCredential);
+            FilteredCredentials.Refresh();
             ClearForm();
         }
 
         private void Edit()
         {
-            ErrorMessage = "";
+            ErrorMessage = string.Empty;
 
             if (SelectedCredential == null)
-                return;
-
-            if (string.IsNullOrWhiteSpace(Title))
             {
-                ErrorMessage = "Title jest wymagany!";
+                ErrorMessage = "Wybierz element do edycji.";
                 return;
             }
 
-            SelectedCredential.Title = Title;
-            SelectedCredential.Username = Username;
-            SelectedCredential.Category = Category;
-            SelectedCredential.EncryptedPassword = Password;
-            SelectedCredential.Account = Website;
-            SelectedCredential.Description = Notes;
+            if (!ValidateCredential())
+            {
+                return;
+            }
 
+            if (Credentials.Any(c =>
+                    c != SelectedCredential &&
+                    c.Category.Equals(Category.Trim(), StringComparison.OrdinalIgnoreCase) &&
+                    c.Title.Equals(Title.Trim(), StringComparison.OrdinalIgnoreCase)))
+            {
+                ErrorMessage = "Title musi być unikalny w wybranej kategorii.";
+                return;
+            }
+
+            SelectedCredential.Title = Title.Trim();
+            SelectedCredential.Username = Username.Trim();
+            SelectedCredential.Category = Category.Trim();
+            SelectedCredential.EncryptedPassword = Password;
+            SelectedCredential.Account = Website.Trim();
+            SelectedCredential.Description = Notes.Trim();
+
+            CredentialStore.Update(SelectedCredential);
             OnPropertyChanged(nameof(Credentials));
             FilteredCredentials.Refresh();
         }
 
+        private bool ValidateCredential()
+        {
+            if (string.IsNullOrWhiteSpace(Title))
+            {
+                ErrorMessage = "Title jest wymagany.";
+                return false;
+            }
+
+            if (string.IsNullOrWhiteSpace(Username))
+            {
+                ErrorMessage = "Username jest wymagany.";
+                return false;
+            }
+
+            if (string.IsNullOrWhiteSpace(Category))
+            {
+                ErrorMessage = "Wybierz kategorię.";
+                return false;
+            }
+
+            if (!CategoryStore.Exists(Category.Trim()))
+            {
+                ErrorMessage = "Wybrana kategoria nie istnieje.";
+                return false;
+            }
+
+            if (string.IsNullOrWhiteSpace(Password))
+            {
+                ErrorMessage = "Password jest wymagany.";
+                return false;
+            }
+
+            if (Password.Length < 8)
+            {
+                ErrorMessage = "Password musi mieć co najmniej 8 znaków.";
+                return false;
+            }
+
+            if (!string.IsNullOrWhiteSpace(Website) &&
+                !Uri.TryCreate(Website.Trim(), UriKind.Absolute, out _))
+            {
+                ErrorMessage = "Website musi być poprawnym adresem URL.";
+                return false;
+            }
+
+            return true;
+        }
+
         public void ClearForm()
         {
-            Title = "";
-            Username = "";
-            Category = "";
-            Password = "";
-            Website = "";
-            Notes = "";
+            Title = string.Empty;
+            Username = string.Empty;
+            Category = string.Empty;
+            Password = string.Empty;
+            Website = string.Empty;
+            Notes = string.Empty;
+            ErrorMessage = string.Empty;
         }
 
         public event PropertyChangedEventHandler? PropertyChanged;

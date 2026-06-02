@@ -1,4 +1,4 @@
-using SecureVault.Model;
+using SecureVault.Model.Data;
 using System.Collections.ObjectModel;
 using System.Linq;
 
@@ -6,29 +6,48 @@ namespace SecureVault.Model.Services
 {
     public static class CategoryStore
     {
-        public static ObservableCollection<Category> Categories { get; } = new()
+        public static ObservableCollection<Category> Categories { get; } = new();
+
+        static CategoryStore()
         {
-            new Category { CategoryType = "Social" },
-            new Category { CategoryType = "Work" },
-            new Category { CategoryType = "Finance" }
-        };
+            Load();
+        }
 
         public static bool Exists(string categoryType)
         {
-            return Categories.Any(category => category.CategoryType == categoryType);
+            return Categories.Any(category => category.CategoryType.Equals(categoryType, System.StringComparison.OrdinalIgnoreCase));
         }
 
         public static void Add(string categoryType)
         {
-            Categories.Add(new Category
+            var category = new Category
             {
-                CategoryType = categoryType
-            });
+                CategoryType = categoryType.Trim()
+            };
+
+            using var dbContext = DatabaseService.CreateContext();
+            dbContext.Categories.Add(category);
+            dbContext.SaveChanges();
+            Categories.Add(category);
         }
 
         public static void Remove(Category category)
         {
+            using var dbContext = DatabaseService.CreateContext();
+            dbContext.Categories.Remove(category);
+            dbContext.SaveChanges();
             Categories.Remove(category);
+        }
+
+        private static void Load()
+        {
+            using var dbContext = DatabaseService.CreateContext();
+            Categories.Clear();
+
+            foreach (var category in dbContext.Categories.OrderBy(category => category.CategoryType))
+            {
+                Categories.Add(category);
+            }
         }
     }
 }

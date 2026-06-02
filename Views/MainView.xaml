@@ -36,7 +36,7 @@
                             <DataTemplate>
                                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
 
-                                    <Button Content="History" Margin="2" Padding="5,2" Click="OpenHistory"/>
+                                    <Button Content="Copy" Margin="2" Padding="5,2" Click="Copy_Click"/>
                                     <Button Content="Edit" Click="Edit_Click" Margin="2" Padding="5,2"/>
                                     <Button Content="Delete" Click="Delete_Click" Margin="2" Padding="5,2"/>
 
@@ -66,10 +66,11 @@
         <StackPanel
                     Orientation="Horizontal"
                     HorizontalAlignment="Center"
-                    Margin="0,348,0,10" Width="570">
+                    Margin="0,348,0,10" Width="660">
             <Button Content="Add" Width="100" Click="Add_Click"/>
             <Button Content="Delete" Width="100" Click="Delete_Click"/>
             <Button Content="Copy" Width="100" Click="Copy_Click"/>
+            <Button Content="History" Width="100" Click="OpenHistory"/>
             <Button Content="Categories" Width="100" Click="OpenCategories"/>
             <Button Content="Logout" Width="100" Click="Logout_Click"/>
         </StackPanel>

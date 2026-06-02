@@ -43,11 +43,24 @@ namespace SecureVault.Views
                 return;
             }
 
-            if (PasswordBox.Password != selectedAccount.Password)
+            if (string.IsNullOrWhiteSpace(PasswordBox.Password))
+            {
+                MessageBox.Show("Podaj hasło.", "Logowanie", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
+            if (!PasswordService.VerifyPassword(PasswordBox.Password, selectedAccount.Password))
             {
                 MessageBox.Show("Niepoprawne hasło.", "Logowanie", MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
+
+            if (!PasswordService.IsHashed(selectedAccount.Password))
+            {
+                AccountStore.UpdatePassword(selectedAccount, PasswordBox.Password);
+            }
+
+            VaultSession.SignIn(selectedAccount, PasswordBox.Password);
 
             if (this.Parent is Grid parentGrid && parentGrid.Parent is MainWindow mainWindow)
             {
