@@ -1,38 +1,54 @@
-﻿<UserControl x:Class="SecureVault.Views.LoginView"
+<UserControl x:Class="SecureVault.Views.LoginView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
-             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
-             xmlns:local="clr-namespace:SecureVault.Views"
-             Background="#1E1E1E">
+             Background="{StaticResource AppBackgroundBrush}"
+             KeyDown="LoginView_KeyDown">
     <Grid>
-        <Border Background="#2D2D30"
-                Padding="30"
-                CornerRadius="10"
-                Width="300"
-                VerticalAlignment="Center"
-                HorizontalAlignment="Center">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="1.15*"/>
+            <ColumnDefinition Width="0.85*"/>
+        </Grid.ColumnDefinitions>
 
-            <StackPanel Height="237">
-
+        <Grid Margin="56">
+            <StackPanel VerticalAlignment="Center" MaxWidth="520">
                 <TextBlock Text="SecureVault"
-                           FontSize="22"
-                           Foreground="White"
-                           HorizontalAlignment="Center"
-                           Margin="0,0,0,20"/>
-                <TextBlock Text="Account" Foreground="White"/>
-                <ComboBox x:Name="LoginBox" Margin="0,5,0,15" ItemsSource="{Binding Loginbox}"/>
-                <TextBlock Text="Password"
-                           Foreground="White"/>
-
-                <PasswordBox x:Name="PasswordBox"
-                             Margin="0,5,0,15"/>
-
-                <Button Content="Login"
-                        Height="25"
-                        Click="Login_Click"/>
-                <Button Content="Create new user" Height="24" Click="Register_Click"/>
+                           FontSize="38"
+                           FontWeight="SemiBold"
+                           Foreground="{StaticResource TextPrimaryBrush}"
+                           Margin="0,0,0,10"/>
+                <TextBlock Text="Password manager"
+                           FontSize="18"
+                           Foreground="{StaticResource TextSecondaryBrush}"
+                           Margin="0,0,0,28"/>
             </StackPanel>
-        </Border>
+        </Grid>
+
+        <Grid Grid.Column="1" Margin="32,56,56,56">
+            <Border Style="{StaticResource PanelCard}"
+                    Width="360"
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Center">
+                <StackPanel>
+                    <TextBlock Text="Sign in"
+                               Style="{StaticResource PageTitleText}"/>
+
+                    <TextBlock Text="Account" Style="{StaticResource FieldLabelText}"/>
+                    <ComboBox x:Name="LoginBox"
+                              ItemsSource="{Binding Loginbox}"/>
+
+                    <TextBlock Text="Password" Style="{StaticResource FieldLabelText}"/>
+                    <PasswordBox x:Name="PasswordBox"
+                                 KeyDown="PasswordBox_KeyDown"/>
+
+                    <Button Content="Sign in"
+                            Style="{StaticResource PrimaryButton}"
+                            Margin="0,24,0,8"
+                            Click="Login_Click"/>
+                    <Button Content="Create account"
+                            Margin="0"
+                            Click="Register_Click"/>
+                </StackPanel>
+            </Border>
+        </Grid>
     </Grid>
 </UserControl>

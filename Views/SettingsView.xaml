@@ -1,0 +1,49 @@
+<UserControl x:Class="SecureVault.Views.SettingsView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             Background="Transparent"
+             KeyDown="SettingsView_KeyDown">
+    <Border Style="{StaticResource PanelCard}"
+            Width="460">
+        <StackPanel>
+            <TextBlock Text="Settings"
+                       Style="{StaticResource PageTitleText}"/>
+            <TextBlock Text="Account and vault options for the current user."
+                       Foreground="{StaticResource TextSecondaryBrush}"
+                       TextWrapping="Wrap"
+                       Margin="0,0,0,20"/>
+
+            <TextBlock Text="Password reminder" Style="{StaticResource SectionTitleText}"/>
+
+            <CheckBox x:Name="ReminderEnabledCheckBox"
+                      Content="Remind me to change account password"
+                      Foreground="{StaticResource TextPrimaryBrush}"
+                      Margin="0,0,0,10"/>
+
+            <TextBlock Text="Reminder interval (months)" Style="{StaticResource FieldLabelText}"/>
+            <TextBox x:Name="ReminderMonthsBox"
+                     Margin="0,0,0,8"/>
+
+            <TextBlock x:Name="ReminderStatusText"
+                       Foreground="{StaticResource TextSecondaryBrush}"
+                       TextWrapping="Wrap"
+                       Margin="0,0,0,14"/>
+
+            <Button Content="Save reminder settings"
+                    HorizontalAlignment="Stretch"
+                    Margin="0,0,0,16"
+                    Click="SaveReminderSettings_Click"/>
+
+            <Button Content="Change account password"
+                    Style="{StaticResource PrimaryButton}"
+                    HorizontalAlignment="Stretch"
+                    Margin="0,0,0,8"
+                    Click="ChangePassword_Click"/>
+
+            <Button Content="Close"
+                    HorizontalAlignment="Stretch"
+                    Margin="0"
+                    Click="Close_Click"/>
+        </StackPanel>
+    </Border>
+</UserControl>

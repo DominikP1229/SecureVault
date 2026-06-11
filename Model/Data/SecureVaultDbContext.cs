@@ -9,6 +9,7 @@ namespace SecureVault.Model.Data
         public DbSet<Category> Categories => Set<Category>();
         public DbSet<Credential> Credentials => Set<Credential>();
         public DbSet<PasswordHistory> PasswordHistories => Set<PasswordHistory>();
+        public DbSet<AccountSettings> AccountSettings => Set<AccountSettings>();
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
@@ -21,12 +22,16 @@ namespace SecureVault.Model.Data
                 .HasIndex(account => account.Name)
                 .IsUnique();
 
+            modelBuilder.Entity<AccountSettings>()
+                .HasIndex(settings => settings.AccountId)
+                .IsUnique();
+
             modelBuilder.Entity<Category>()
                 .HasIndex(category => category.CategoryType)
                 .IsUnique();
 
             modelBuilder.Entity<Credential>()
-                .HasIndex(credential => new { credential.Title, credential.Category })
+                .HasIndex(credential => new { credential.OwnerAccountId, credential.Title, credential.Category })
                 .IsUnique();
 
             modelBuilder.Entity<PasswordHistory>()

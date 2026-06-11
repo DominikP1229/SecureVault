@@ -68,6 +68,8 @@ namespace SecureVault.ViewModel
                     Password = value.EncryptedPassword;
                     Website = value.Account;
                     Notes = value.Description;
+                    CredentialPasswordReminderEnabled = value.PasswordReminderEnabled;
+                    CredentialPasswordReminderMonths = value.PasswordReminderMonths.ToString();
                 }
             }
         }
@@ -124,6 +126,20 @@ namespace SecureVault.ViewModel
         {
             get => _notes;
             set { _notes = value; OnPropertyChanged(); }
+        }
+
+        private bool _credentialPasswordReminderEnabled;
+        public bool CredentialPasswordReminderEnabled
+        {
+            get => _credentialPasswordReminderEnabled;
+            set { _credentialPasswordReminderEnabled = value; OnPropertyChanged(); }
+        }
+
+        private string _credentialPasswordReminderMonths = "6";
+        public string CredentialPasswordReminderMonths
+        {
+            get => _credentialPasswordReminderMonths;
+            set { _credentialPasswordReminderMonths = value; OnPropertyChanged(); }
         }
 
         private string _errorMessage = string.Empty;
@@ -238,7 +254,10 @@ namespace SecureVault.ViewModel
                 Category = Category.Trim(),
                 EncryptedPassword = Password,
                 Account = Website.Trim(),
-                Description = Notes.Trim()
+                Description = Notes.Trim(),
+                PasswordReminderEnabled = CredentialPasswordReminderEnabled,
+                PasswordReminderMonths = int.Parse(CredentialPasswordReminderMonths),
+                LastPasswordChangedAt = DateTime.Now
             };
 
             CredentialStore.Add(credential);
@@ -292,6 +311,9 @@ namespace SecureVault.ViewModel
             SelectedCredential.EncryptedPassword = Password;
             SelectedCredential.Account = Website.Trim();
             SelectedCredential.Description = Notes.Trim();
+            SelectedCredential.PasswordReminderEnabled = CredentialPasswordReminderEnabled;
+            SelectedCredential.PasswordReminderMonths = int.Parse(CredentialPasswordReminderMonths);
+            SelectedCredential.LastPasswordChangedAt = DateTime.Now;
 
             CredentialStore.Update(SelectedCredential);
             OnPropertyChanged(nameof(Credentials));
@@ -343,6 +365,14 @@ namespace SecureVault.ViewModel
                 return false;
             }
 
+            if (!int.TryParse(CredentialPasswordReminderMonths, out var reminderMonths) ||
+                reminderMonths < 1 ||
+                reminderMonths > 60)
+            {
+                ErrorMessage = "Okres przypomnienia hasła musi wynosić od 1 do 60 miesięcy.";
+                return false;
+            }
+
             return true;
         }
 
@@ -354,6 +384,8 @@ namespace SecureVault.ViewModel
             Password = string.Empty;
             Website = string.Empty;
             Notes = string.Empty;
+            CredentialPasswordReminderEnabled = false;
+            CredentialPasswordReminderMonths = "6";
             ErrorMessage = string.Empty;
         }
 

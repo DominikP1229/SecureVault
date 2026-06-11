@@ -99,5 +99,19 @@ namespace SecureVault.Views
                 }
             }
         }
+
+        private void CategoriesView_KeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.Key == Key.Enter)
+            {
+                AddCategory_Click(sender, e);
+                e.Handled = true;
+            }
+            else if (e.Key == Key.Escape)
+            {
+                Close_Click(sender, e);
+                e.Handled = true;
+            }
+        }
     }
 }

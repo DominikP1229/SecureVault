@@ -3,6 +3,7 @@ using System.Collections.ObjectModel;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Input;
 
 namespace SecureVault.Views
 {
@@ -58,6 +59,15 @@ namespace SecureVault.Views
                 {
                     content.Content = null;
                 }
+            }
+        }
+
+        private void HistoryView_KeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.Key == Key.Escape)
+            {
+                Close_Click(sender, e);
+                e.Handled = true;
             }
         }
     }

@@ -63,6 +63,11 @@ namespace SecureVault.Views
             }
 
             AccountStore.Add(login, password);
+            var account = AccountStore.Accounts.FirstOrDefault(account => account.Name.Equals(login, StringComparison.OrdinalIgnoreCase));
+            if (account != null)
+            {
+                AccountSettingsStore.MarkPasswordChanged(account.Id);
+            }
 
             if (this.Parent is Grid parentGrid && parentGrid.Parent is MainWindow mainWindow)
             {
@@ -75,6 +80,29 @@ namespace SecureVault.Views
             if (this.Parent is Grid parentGrid && parentGrid.Parent is MainWindow mainWindow)
             {
                 mainWindow.SwitchView(new LoginView());
+            }
+        }
+
+        private void RegisterView_KeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.Key == Key.Enter)
+            {
+                Register_Click(sender, e);
+                e.Handled = true;
+            }
+            else if (e.Key == Key.Escape)
+            {
+                Cancel_Click(sender, e);
+                e.Handled = true;
+            }
+        }
+
+        private void PasswordBox_KeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.Key == Key.Enter)
+            {
+                Register_Click(sender, e);
+                e.Handled = true;
             }
         }
     }

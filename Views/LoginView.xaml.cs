@@ -61,6 +61,8 @@ namespace SecureVault.Views
             }
 
             VaultSession.SignIn(selectedAccount, PasswordBox.Password);
+            ShowPasswordReminderIfNeeded(selectedAccount);
+            ShowCredentialPasswordRemindersIfNeeded();
 
             if (this.Parent is Grid parentGrid && parentGrid.Parent is MainWindow mainWindow)
             {
@@ -73,6 +75,54 @@ namespace SecureVault.Views
             {
                 mainWindow.SwitchView(new RegisterView());
             }
+        }
+
+        private void LoginView_KeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.Key == Key.Enter)
+            {
+                Login_Click(sender, e);
+                e.Handled = true;
+            }
+        }
+
+        private void PasswordBox_KeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.Key == Key.Enter)
+            {
+                Login_Click(sender, e);
+                e.Handled = true;
+            }
+        }
+
+        private static void ShowPasswordReminderIfNeeded(Account account)
+        {
+            var settings = AccountSettingsStore.GetOrCreate(account.Id);
+            if (!AccountSettingsStore.ShouldRemind(settings))
+            {
+                return;
+            }
+
+            MessageBox.Show(
+                $"Minął ustawiony okres przypomnienia o zmianie hasła ({settings.PasswordReminderMonths} mies.). Możesz zmienić hasło w Settings.",
+                "Przypomnienie o zmianie hasła",
+                MessageBoxButton.OK,
+                MessageBoxImage.Information);
+        }
+
+        private static void ShowCredentialPasswordRemindersIfNeeded()
+        {
+            var expiredTitles = CredentialStore.GetExpiredPasswordReminderTitles();
+            if (expiredTitles.Length == 0)
+            {
+                return;
+            }
+
+            MessageBox.Show(
+                "Warto zmienić hasła dla tych wpisów:\n\n" + string.Join("\n", expiredTitles),
+                "Przypomnienie o zapisanych hasłach",
+                MessageBoxButton.OK,
+                MessageBoxImage.Information);
         }
     }
 }

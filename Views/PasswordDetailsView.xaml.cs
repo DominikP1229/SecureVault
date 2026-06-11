@@ -2,6 +2,7 @@ using SecureVault.Model;
 using SecureVault.ViewModel;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Input;
 
 namespace SecureVault.Views
 {
@@ -51,6 +52,15 @@ namespace SecureVault.Views
         private void Back_Click(object sender, RoutedEventArgs e)
         {
             SwitchTo(new MainView(_viewModel));
+        }
+
+        private void PasswordDetailsView_KeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.Key == Key.Escape)
+            {
+                SwitchTo(new MainView(_viewModel));
+                e.Handled = true;
+            }
         }
 
         private void SwitchTo(UIElement view)

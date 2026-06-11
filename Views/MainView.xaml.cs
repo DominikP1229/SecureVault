@@ -131,6 +131,12 @@ namespace SecureVault.Views
             SubViewContainer.Visibility = Visibility.Visible;
         }
 
+        private void OpenSettings(object sender, RoutedEventArgs e)
+        {
+            SubViewContent.Content = new SettingsView();
+            SubViewContainer.Visibility = Visibility.Visible;
+        }
+
         public void CloseSubView()
         {
             SubViewContainer.Visibility = Visibility.Collapsed;

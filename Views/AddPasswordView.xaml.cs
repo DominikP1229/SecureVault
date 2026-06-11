@@ -81,6 +81,20 @@ namespace SecureVault.Views
             ReturnToMainView();
         }
 
+        private void AddPasswordView_KeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.Key == Key.Escape)
+            {
+                ReturnToMainView();
+                e.Handled = true;
+            }
+            else if (e.Key == Key.Enter && Keyboard.Modifiers == ModifierKeys.Control)
+            {
+                Save_Click(sender, e);
+                e.Handled = true;
+            }
+        }
+
         private void ReturnToMainView()
         {
             if (this.Parent is Grid parentGrid && parentGrid.Parent is MainWindow mainWindow)
