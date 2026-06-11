@@ -1,13 +1,15 @@
+using Microsoft.EntityFrameworkCore;
 using SecureVault.Model.Data;
 using System;
 using System.Collections.ObjectModel;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace SecureVault.Model.Services
 {
     public static class PasswordHistoryStore
     {
-        public static ObservableCollection<PasswordHistory> LoadForCurrentAccount()
+        public static async Task<ObservableCollection<PasswordHistory>> LoadForCurrentAccountAsync()
         {
             var account = VaultSession.CurrentAccount;
             if (account == null)
@@ -15,15 +17,16 @@ namespace SecureVault.Model.Services
                 return new ObservableCollection<PasswordHistory>();
             }
 
-            using var dbContext = DatabaseService.CreateContext();
-            return new ObservableCollection<PasswordHistory>(
-                dbContext.PasswordHistories
-                    .Where(history => history.AccountId == account.Id)
-                    .OrderByDescending(history => history.ChangedDate)
-                    .ToList());
+            await using var dbContext = await DatabaseService.CreateContextAsync();
+            var historyItems = await dbContext.PasswordHistories
+                .Where(history => history.AccountId == account.Id)
+                .OrderByDescending(history => history.ChangedDate)
+                .ToListAsync();
+
+            return new ObservableCollection<PasswordHistory>(historyItems);
         }
 
-        public static void Add(Credential credential, string action)
+        public static async Task AddAsync(Credential credential, string action)
         {
             var account = VaultSession.CurrentAccount;
             var encryption = VaultSession.Encryption;
@@ -33,7 +36,7 @@ namespace SecureVault.Model.Services
                 return;
             }
 
-            using var dbContext = DatabaseService.CreateContext();
+            await using var dbContext = await DatabaseService.CreateContextAsync();
             dbContext.PasswordHistories.Add(new PasswordHistory
             {
                 CredentialId = credential.Id,
@@ -43,7 +46,7 @@ namespace SecureVault.Model.Services
                 EncryptedPassword = encryption.Encrypt(credential.EncryptedPassword),
                 ChangedDate = DateTime.Now
             });
-            dbContext.SaveChanges();
+            await dbContext.SaveChangesAsync();
         }
     }
 }

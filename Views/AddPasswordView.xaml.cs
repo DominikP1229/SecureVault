@@ -1,28 +1,13 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using SecureVault.ViewModel;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
 using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
-using SecureVault.ViewModel;
 
 namespace SecureVault.Views
 {
-    /// <summary>
-    /// Interaction logic for PasswordMenuView.xaml
-    /// </summary>
-    public partial class AddPasswordView: UserControl
+    public partial class AddPasswordView : UserControl
     {
         private readonly MainViewModel _viewModel;
-        private readonly bool _isEditMode;
 
         public AddPasswordView()
             : this(new MainViewModel())
@@ -30,76 +15,65 @@ namespace SecureVault.Views
         }
 
         public AddPasswordView(MainViewModel viewModel)
-            : this(viewModel, false)
-        {
-        }
-
-        public AddPasswordView(MainViewModel viewModel, bool isEditMode)
         {
             InitializeComponent();
             _viewModel = viewModel;
-            _isEditMode = isEditMode;
             DataContext = _viewModel;
+            _viewModel.NavigationRequested += HandleNavigationRequested;
         }
 
-        private void OpenCategories(object sender, RoutedEventArgs e)
+        public AddPasswordView(MainViewModel viewModel, bool isEditMode)
+            : this(viewModel)
         {
-        }
-
-        private void Save_Click(object sender, RoutedEventArgs e)
-        {
-            if (_isEditMode)
-            {
-                if (_viewModel.EditCommand.CanExecute(null))
-                {
-                    _viewModel.EditCommand.Execute(null);
-
-                    if (string.IsNullOrWhiteSpace(_viewModel.ErrorMessage))
-                    {
-                        ReturnToMainView();
-                    }
-                }
-
-                return;
-            }
-
-            var countBeforeSave = _viewModel.Credentials.Count;
-
-            if (_viewModel.AddCommand.CanExecute(null))
-            {
-                _viewModel.AddCommand.Execute(null);
-            }
-
-            if (_viewModel.Credentials.Count > countBeforeSave)
-            {
-                ReturnToMainView();
-            }
-        }
-
-        private void Cancel_Click(object sender, RoutedEventArgs e)
-        {
-            ReturnToMainView();
+            _viewModel.IsEditMode = isEditMode;
         }
 
         private void AddPasswordView_KeyDown(object sender, KeyEventArgs e)
         {
             if (e.Key == Key.Escape)
             {
-                ReturnToMainView();
+                _viewModel.CancelCredentialFormCommand.Execute(null);
                 e.Handled = true;
             }
             else if (e.Key == Key.Enter && Keyboard.Modifiers == ModifierKeys.Control)
             {
-                Save_Click(sender, e);
+                _viewModel.SaveCredentialCommand.Execute(null);
                 e.Handled = true;
             }
         }
 
-        private void ReturnToMainView()
+        private void HandleNavigationRequested(MainNavigationTarget target)
         {
-            if (this.Parent is Grid parentGrid && parentGrid.Parent is MainWindow mainWindow)
+            switch (target)
             {
-                mainWindow.SwitchView(new MainView(_viewModel));
+                case MainNavigationTarget.Main:
+                    SwitchRoot(new MainView(_viewModel));
+                    break;
+                case MainNavigationTarget.Login:
+                    SwitchRoot(new LoginView());
+                    break;
+                case MainNavigationTarget.CredentialDetails:
+                    if (_viewModel.SelectedCredential != null)
+                    {
+                        SwitchRoot(new PasswordDetailsView(_viewModel, _viewModel.SelectedCredential));
+                    }
+                    break;
+                case MainNavigationTarget.CredentialForm:
+                    break;
+                case MainNavigationTarget.History:
+                case MainNavigationTarget.Categories:
+                case MainNavigationTarget.Settings:
+                    break;
+            }
+        }
+
+        private void SwitchRoot(UIElement view)
+        {
+            _viewModel.NavigationRequested -= HandleNavigationRequested;
+
+            if (Parent is Grid parentGrid && parentGrid.Parent is MainWindow mainWindow)
+            {
+                mainWindow.SwitchView(view);
             }
         }
     }

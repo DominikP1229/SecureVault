@@ -1,15 +1,18 @@
 using SecureVault.Model.Data;
+using SecureVault.Model.Services;
 using System.Windows;
 
 namespace SecureVault
 {
     public partial class App : Application
     {
-        protected override void OnStartup(StartupEventArgs e)
+        protected override async void OnStartup(StartupEventArgs e)
         {
             try
             {
-                DatabaseService.Initialize();
+                await DatabaseService.InitializeAsync();
+                await AccountStore.LoadAsync();
+                await CategoryStore.LoadAsync();
             }
             catch (System.Exception ex)
             {

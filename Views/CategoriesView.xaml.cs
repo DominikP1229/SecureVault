@@ -1,87 +1,45 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using SecureVault.ViewModel;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
 using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
-using SecureVault.Model;
-using SecureVault.Model.Services;
-using SecureVault.ViewModel;
 
 namespace SecureVault.Views
 {
-    /// <summary>
-    /// Logika interakcji dla klasy CategoriesView.xaml
-    /// </summary>
     public partial class CategoriesView : UserControl
     {
-        private readonly MainViewModel _viewModel;
+        private readonly CategoriesViewModel _viewModel;
 
         public CategoriesView()
             : this(new MainViewModel())
         {
         }
 
-        public CategoriesView(MainViewModel viewModel)
+        public CategoriesView(MainViewModel mainViewModel)
         {
-            _viewModel = viewModel;
             InitializeComponent();
+            _viewModel = new CategoriesViewModel(mainViewModel);
             DataContext = _viewModel;
+            _viewModel.CloseRequested += CloseSubView;
         }
 
-        private void AddCategory_Click(object sender, RoutedEventArgs e)
+        private void CategoriesView_KeyDown(object sender, KeyEventArgs e)
         {
-            var categoryType = CategoryNameBox.Text.Trim();
-
-            if (string.IsNullOrWhiteSpace(categoryType))
+            if (e.Key == Key.Enter)
             {
-                MessageBox.Show("Nazwa kategorii jest wymagana.", "Kategorie", MessageBoxButton.OK, MessageBoxImage.Warning);
-                return;
+                _viewModel.AddCategoryCommand.Execute(null);
+                e.Handled = true;
             }
-
-            if (categoryType.Length < 2)
+            else if (e.Key == Key.Escape)
             {
-                MessageBox.Show("Nazwa kategorii musi mieć co najmniej 2 znaki.", "Kategorie", MessageBoxButton.OK, MessageBoxImage.Warning);
-                return;
+                _viewModel.CloseCommand.Execute(null);
+                e.Handled = true;
             }
-
-            if (CategoryStore.Exists(categoryType))
-            {
-                MessageBox.Show("Taka kategoria już istnieje.", "Kategorie", MessageBoxButton.OK, MessageBoxImage.Warning);
-                return;
-            }
-
-            CategoryStore.Add(categoryType);
-            CategoryNameBox.Clear();
         }
 
-        private void DeleteCategory_Click(object sender, RoutedEventArgs e)
+        private void CloseSubView()
         {
-            if (CategoryListBox.SelectedItem is not Category category)
-            {
-                MessageBox.Show("Wybierz kategorię do usunięcia.", "Kategorie", MessageBoxButton.OK, MessageBoxImage.Information);
-                return;
-            }
+            _viewModel.CloseRequested -= CloseSubView;
 
-            if (_viewModel.Credentials.Any(credential => credential.Category == category.CategoryType))
-            {
-                MessageBox.Show("Nie można usunąć kategorii używanej przez zapisane hasła.", "Kategorie", MessageBoxButton.OK, MessageBoxImage.Warning);
-                return;
-            }
-
-            CategoryStore.Remove(category);
-        }
-
-        private void Close_Click(object sender, RoutedEventArgs e)
-        {
             var parent = this.Parent as FrameworkElement;
 
             while (parent != null && parent.Name != "SubViewContainer")
@@ -89,28 +47,14 @@ namespace SecureVault.Views
                 parent = parent.Parent as FrameworkElement;
             }
 
-            if (parent != null)
+            if (parent is Border border)
             {
-                parent.Visibility = Visibility.Collapsed;
+                border.Visibility = Visibility.Collapsed;
 
-                if (parent is Border border && border.Child is ContentControl content)
+                if (border.Child is ContentControl content)
                 {
                     content.Content = null;
                 }
-            }
-        }
-
-        private void CategoriesView_KeyDown(object sender, KeyEventArgs e)
-        {
-            if (e.Key == Key.Enter)
-            {
-                AddCategory_Click(sender, e);
-                e.Handled = true;
-            }
-            else if (e.Key == Key.Escape)
-            {
-                Close_Click(sender, e);
-                e.Handled = true;
             }
         }
     }

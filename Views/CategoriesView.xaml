@@ -16,25 +16,27 @@
             <ListBox x:Name="CategoryListBox"
                      Height="180"
                      ItemsSource="{Binding Categories}"
+                     SelectedItem="{Binding SelectedCategory}"
                      DisplayMemberPath="CategoryType"/>
 
             <TextBlock Text="New category" Style="{StaticResource FieldLabelText}"/>
-            <TextBox x:Name="CategoryNameBox"/>
+            <TextBox x:Name="CategoryNameBox"
+                     Text="{Binding CategoryName, UpdateSourceTrigger=PropertyChanged}"/>
 
             <StackPanel Orientation="Horizontal"
                         HorizontalAlignment="Right"
                         Margin="0,22,0,0">
                 <Button Content="Close"
                         Width="86"
-                        Click="Close_Click"/>
+                        Command="{Binding CloseCommand}"/>
                 <Button Content="Delete"
                         Width="92"
                         Style="{StaticResource DangerButton}"
-                        Click="DeleteCategory_Click"/>
+                        Command="{Binding DeleteCategoryCommand}"/>
                 <Button Content="Add"
                         Width="86"
                         Style="{StaticResource PrimaryButton}"
-                        Click="AddCategory_Click"/>
+                        Command="{Binding AddCategoryCommand}"/>
             </StackPanel>
         </StackPanel>
     </Border>

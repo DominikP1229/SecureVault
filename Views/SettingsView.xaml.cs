@@ -1,5 +1,4 @@
-using SecureVault.Model;
-using SecureVault.Model.Services;
+using SecureVault.ViewModel;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -8,50 +7,31 @@ namespace SecureVault.Views
 {
     public partial class SettingsView : UserControl
     {
-        private AccountSettings? _settings;
+        private readonly SettingsViewModel _viewModel = new();
 
         public SettingsView()
         {
             InitializeComponent();
-            LoadSettings();
+            DataContext = _viewModel;
+            _viewModel.CloseRequested += CloseSubView;
+            _viewModel.ChangePasswordRequested += OpenChangePasswordView;
         }
 
-        private void LoadSettings()
+        private void SettingsView_KeyDown(object sender, KeyEventArgs e)
         {
-            var account = VaultSession.CurrentAccount;
-            if (account == null)
+            if (e.Key == Key.Escape)
             {
-                ReminderStatusText.Text = "Brak aktywnej sesji użytkownika.";
-                return;
+                _viewModel.CloseCommand.Execute(null);
+                e.Handled = true;
             }
-
-            _settings = AccountSettingsStore.GetOrCreate(account.Id);
-            ReminderEnabledCheckBox.IsChecked = _settings.PasswordReminderEnabled;
-            ReminderMonthsBox.Text = _settings.PasswordReminderMonths.ToString();
-            ReminderStatusText.Text = $"Ostatnia zmiana hasła: {_settings.LastPasswordChangedAt:yyyy-MM-dd}.";
+            else if (e.Key == Key.Enter)
+            {
+                _viewModel.SaveReminderSettingsCommand.Execute(null);
+                e.Handled = true;
+            }
         }
 
-        private void SaveReminderSettings_Click(object sender, RoutedEventArgs e)
-        {
-            if (_settings == null)
-            {
-                ReminderStatusText.Text = "Nie można zapisać ustawień bez aktywnego konta.";
-                return;
-            }
-
-            if (!int.TryParse(ReminderMonthsBox.Text, out var months) || months < 1 || months > 60)
-            {
-                ReminderStatusText.Text = "Podaj okres od 1 do 60 miesięcy.";
-                return;
-            }
-
-            _settings.PasswordReminderEnabled = ReminderEnabledCheckBox.IsChecked == true;
-            _settings.PasswordReminderMonths = months;
-            AccountSettingsStore.Save(_settings);
-            ReminderStatusText.Text = "Ustawienia przypomnienia zostały zapisane.";
-        }
-
-        private void ChangePassword_Click(object sender, RoutedEventArgs e)
+        private void OpenChangePasswordView()
         {
             if (this.Parent is ContentControl contentControl)
             {
@@ -59,27 +39,11 @@ namespace SecureVault.Views
             }
         }
 
-        private void Close_Click(object sender, RoutedEventArgs e)
-        {
-            CloseSubView();
-        }
-
-        private void SettingsView_KeyDown(object sender, KeyEventArgs e)
-        {
-            if (e.Key == Key.Escape)
-            {
-                CloseSubView();
-                e.Handled = true;
-            }
-            else if (e.Key == Key.Enter)
-            {
-                SaveReminderSettings_Click(sender, e);
-                e.Handled = true;
-            }
-        }
-
         private void CloseSubView()
         {
+            _viewModel.CloseRequested -= CloseSubView;
+            _viewModel.ChangePasswordRequested -= OpenChangePasswordView;
+
             var parent = this.Parent as FrameworkElement;
 
             while (parent != null && parent.Name != "SubViewContainer")

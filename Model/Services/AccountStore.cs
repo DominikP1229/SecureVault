@@ -1,6 +1,8 @@
+using Microsoft.EntityFrameworkCore;
 using SecureVault.Model.Data;
 using System.Collections.ObjectModel;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace SecureVault.Model.Services
 {
@@ -8,17 +10,26 @@ namespace SecureVault.Model.Services
     {
         public static ObservableCollection<Account> Accounts { get; } = new();
 
-        static AccountStore()
-        {
-            Load();
-        }
-
         public static bool Exists(string name)
         {
             return Accounts.Any(account => account.Name.Equals(name, System.StringComparison.OrdinalIgnoreCase));
         }
 
-        public static void Add(string name, string password)
+        public static async Task LoadAsync()
+        {
+            await using var dbContext = await DatabaseService.CreateContextAsync();
+            var accounts = await dbContext.Accounts
+                .OrderBy(account => account.Name)
+                .ToListAsync();
+
+            Accounts.Clear();
+            foreach (var account in accounts)
+            {
+                Accounts.Add(account);
+            }
+        }
+
+        public static async Task<Account> AddAsync(string name, string password)
         {
             var account = new Account
             {
@@ -26,30 +37,20 @@ namespace SecureVault.Model.Services
                 Password = PasswordService.HashPassword(password)
             };
 
-            using var dbContext = DatabaseService.CreateContext();
+            await using var dbContext = await DatabaseService.CreateContextAsync();
             dbContext.Accounts.Add(account);
-            dbContext.SaveChanges();
+            await dbContext.SaveChangesAsync();
             Accounts.Add(account);
+            return account;
         }
 
-        public static void UpdatePassword(Account account, string password)
+        public static async Task UpdatePasswordAsync(Account account, string password)
         {
             account.Password = PasswordService.HashPassword(password);
 
-            using var dbContext = DatabaseService.CreateContext();
+            await using var dbContext = await DatabaseService.CreateContextAsync();
             dbContext.Accounts.Update(account);
-            dbContext.SaveChanges();
-        }
-
-        private static void Load()
-        {
-            using var dbContext = DatabaseService.CreateContext();
-            Accounts.Clear();
-
-            foreach (var account in dbContext.Accounts.OrderBy(account => account.Name))
-            {
-                Accounts.Add(account);
-            }
+            await dbContext.SaveChangesAsync();
         }
     }
 }

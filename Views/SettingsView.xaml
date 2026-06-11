@@ -18,32 +18,35 @@
             <CheckBox x:Name="ReminderEnabledCheckBox"
                       Content="Remind me to change account password"
                       Foreground="{StaticResource TextPrimaryBrush}"
+                      IsChecked="{Binding ReminderEnabled}"
                       Margin="0,0,0,10"/>
 
             <TextBlock Text="Reminder interval (months)" Style="{StaticResource FieldLabelText}"/>
             <TextBox x:Name="ReminderMonthsBox"
+                     Text="{Binding ReminderMonths, UpdateSourceTrigger=PropertyChanged}"
                      Margin="0,0,0,8"/>
 
             <TextBlock x:Name="ReminderStatusText"
                        Foreground="{StaticResource TextSecondaryBrush}"
+                       Text="{Binding ReminderStatus}"
                        TextWrapping="Wrap"
                        Margin="0,0,0,14"/>
 
             <Button Content="Save reminder settings"
                     HorizontalAlignment="Stretch"
                     Margin="0,0,0,16"
-                    Click="SaveReminderSettings_Click"/>
+                    Command="{Binding SaveReminderSettingsCommand}"/>
 
             <Button Content="Change account password"
                     Style="{StaticResource PrimaryButton}"
                     HorizontalAlignment="Stretch"
                     Margin="0,0,0,8"
-                    Click="ChangePassword_Click"/>
+                    Command="{Binding ChangePasswordCommand}"/>
 
             <Button Content="Close"
                     HorizontalAlignment="Stretch"
                     Margin="0"
-                    Click="Close_Click"/>
+                    Command="{Binding CloseCommand}"/>
         </StackPanel>
     </Border>
 </UserControl>

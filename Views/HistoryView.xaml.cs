@@ -1,6 +1,4 @@
-using SecureVault.Model.Services;
-using System.Collections.ObjectModel;
-using System.Linq;
+using SecureVault.ViewModel;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -9,41 +7,28 @@ namespace SecureVault.Views
 {
     public partial class HistoryView : UserControl
     {
-        public ObservableCollection<PasswordHistoryViewItem> HistoryItems { get; } = new();
+        private readonly HistoryViewModel _viewModel = new();
 
         public HistoryView()
         {
             InitializeComponent();
-            DataContext = this;
-            LoadHistory();
+            DataContext = _viewModel;
+            _viewModel.CloseRequested += CloseSubView;
         }
 
-        private void LoadHistory()
+        private void HistoryView_KeyDown(object sender, KeyEventArgs e)
         {
-            var encryption = VaultSession.Encryption;
-
-            foreach (var history in PasswordHistoryStore.LoadForCurrentAccount())
+            if (e.Key == Key.Escape)
             {
-                var maskedPassword = "********";
-                if (encryption != null &&
-                    encryption.TryDecrypt(history.EncryptedPassword, out var plainPassword) &&
-                    !string.IsNullOrEmpty(plainPassword))
-                {
-                    maskedPassword = new string('*', plainPassword.Length);
-                }
-
-                HistoryItems.Add(new PasswordHistoryViewItem
-                {
-                    ChangedDate = history.ChangedDate,
-                    Action = history.Action,
-                    CredentialTitle = history.CredentialTitle,
-                    MaskedPassword = maskedPassword
-                });
+                _viewModel.CloseCommand.Execute(null);
+                e.Handled = true;
             }
         }
 
-        private void Close_Click(object sender, RoutedEventArgs e)
+        private void CloseSubView()
         {
+            _viewModel.CloseRequested -= CloseSubView;
+
             var parent = this.Parent as FrameworkElement;
 
             while (parent != null && parent.Name != "SubViewContainer")
@@ -51,32 +36,15 @@ namespace SecureVault.Views
                 parent = parent.Parent as FrameworkElement;
             }
 
-            if (parent != null)
+            if (parent is Border border)
             {
-                parent.Visibility = Visibility.Collapsed;
+                border.Visibility = Visibility.Collapsed;
 
-                if (parent is Border border && border.Child is ContentControl content)
+                if (border.Child is ContentControl content)
                 {
                     content.Content = null;
                 }
             }
         }
-
-        private void HistoryView_KeyDown(object sender, KeyEventArgs e)
-        {
-            if (e.Key == Key.Escape)
-            {
-                Close_Click(sender, e);
-                e.Handled = true;
-            }
-        }
-    }
-
-    public class PasswordHistoryViewItem
-    {
-        public System.DateTime ChangedDate { get; set; }
-        public string Action { get; set; } = string.Empty;
-        public string CredentialTitle { get; set; } = string.Empty;
-        public string MaskedPassword { get; set; } = string.Empty;
     }
 }

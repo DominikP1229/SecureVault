@@ -1,6 +1,7 @@
 using System;
 using System.Data;
 using System.IO;
+using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using SecureVault.Model.Services;
 
@@ -23,83 +24,83 @@ namespace SecureVault.Model.Data
 
         public static string ConnectionString => $"Data Source={DatabasePath}";
 
-        public static SecureVaultDbContext CreateContext()
+        public static async Task<SecureVaultDbContext> CreateContextAsync()
         {
-            Initialize();
+            await InitializeAsync();
             return new SecureVaultDbContext();
         }
 
-        public static void Initialize()
+        public static async Task InitializeAsync()
         {
             if (_initialized)
             {
                 return;
             }
 
-            using var dbContext = new SecureVaultDbContext();
-            dbContext.Database.EnsureCreated();
-            EnsureSchema(dbContext);
-            Seed(dbContext);
+            await using var dbContext = new SecureVaultDbContext();
+            await dbContext.Database.EnsureCreatedAsync();
+            await EnsureSchemaAsync(dbContext);
+            await SeedAsync(dbContext);
             _initialized = true;
         }
 
-        private static void EnsureSchema(SecureVaultDbContext dbContext)
+        private static async Task EnsureSchemaAsync(SecureVaultDbContext dbContext)
         {
-            if (!ColumnExists(dbContext, "Credentials", "OwnerAccountId"))
+            if (!await ColumnExistsAsync(dbContext, "Credentials", "OwnerAccountId"))
             {
-                dbContext.Database.ExecuteSqlRaw("""
+                await dbContext.Database.ExecuteSqlRawAsync("""
                     ALTER TABLE Credentials
                     ADD COLUMN OwnerAccountId INTEGER NOT NULL DEFAULT 0;
                     """);
             }
 
-            if (!ColumnExists(dbContext, "Credentials", "PasswordReminderEnabled"))
+            if (!await ColumnExistsAsync(dbContext, "Credentials", "PasswordReminderEnabled"))
             {
-                dbContext.Database.ExecuteSqlRaw("""
+                await dbContext.Database.ExecuteSqlRawAsync("""
                     ALTER TABLE Credentials
                     ADD COLUMN PasswordReminderEnabled INTEGER NOT NULL DEFAULT 0;
                     """);
             }
 
-            if (!ColumnExists(dbContext, "Credentials", "PasswordReminderMonths"))
+            if (!await ColumnExistsAsync(dbContext, "Credentials", "PasswordReminderMonths"))
             {
-                dbContext.Database.ExecuteSqlRaw("""
+                await dbContext.Database.ExecuteSqlRawAsync("""
                     ALTER TABLE Credentials
                     ADD COLUMN PasswordReminderMonths INTEGER NOT NULL DEFAULT 6;
                     """);
             }
 
-            if (!ColumnExists(dbContext, "Credentials", "LastPasswordChangedAt"))
+            if (!await ColumnExistsAsync(dbContext, "Credentials", "LastPasswordChangedAt"))
             {
-                dbContext.Database.ExecuteSqlRaw("""
+                await dbContext.Database.ExecuteSqlRawAsync("""
                     ALTER TABLE Credentials
                     ADD COLUMN LastPasswordChangedAt TEXT NOT NULL DEFAULT '2000-01-01 00:00:00';
                     """);
 
-                dbContext.Database.ExecuteSqlRaw("""
+                await dbContext.Database.ExecuteSqlRawAsync("""
                     UPDATE Credentials
                     SET LastPasswordChangedAt = datetime('now')
                     WHERE LastPasswordChangedAt = '2000-01-01 00:00:00';
                     """);
             }
 
-            dbContext.Database.ExecuteSqlRaw("""
+            await dbContext.Database.ExecuteSqlRawAsync("""
                 UPDATE Credentials
                 SET OwnerAccountId = (SELECT Id FROM Accounts ORDER BY Id LIMIT 1)
                 WHERE OwnerAccountId = 0
                   AND EXISTS (SELECT 1 FROM Accounts);
                 """);
 
-            dbContext.Database.ExecuteSqlRaw("""
+            await dbContext.Database.ExecuteSqlRawAsync("""
                 DROP INDEX IF EXISTS IX_Credentials_Title_Category;
                 """);
 
-            dbContext.Database.ExecuteSqlRaw("""
+            await dbContext.Database.ExecuteSqlRawAsync("""
                 CREATE UNIQUE INDEX IF NOT EXISTS IX_Credentials_OwnerAccountId_Title_Category
                 ON Credentials (OwnerAccountId, Title, Category);
                 """);
 
-            dbContext.Database.ExecuteSqlRaw("""
+            await dbContext.Database.ExecuteSqlRawAsync("""
                 CREATE TABLE IF NOT EXISTS PasswordHistories (
                     Id INTEGER NOT NULL CONSTRAINT PK_PasswordHistories PRIMARY KEY AUTOINCREMENT,
                     CredentialId TEXT NOT NULL,
@@ -111,17 +112,17 @@ namespace SecureVault.Model.Data
                 );
                 """);
 
-            dbContext.Database.ExecuteSqlRaw("""
+            await dbContext.Database.ExecuteSqlRawAsync("""
                 CREATE INDEX IF NOT EXISTS IX_PasswordHistories_AccountId
                 ON PasswordHistories (AccountId);
                 """);
 
-            dbContext.Database.ExecuteSqlRaw("""
+            await dbContext.Database.ExecuteSqlRawAsync("""
                 CREATE INDEX IF NOT EXISTS IX_PasswordHistories_CredentialId
                 ON PasswordHistories (CredentialId);
                 """);
 
-            dbContext.Database.ExecuteSqlRaw("""
+            await dbContext.Database.ExecuteSqlRawAsync("""
                 CREATE TABLE IF NOT EXISTS AccountSettings (
                     Id INTEGER NOT NULL CONSTRAINT PK_AccountSettings PRIMARY KEY AUTOINCREMENT,
                     AccountId INTEGER NOT NULL,
@@ -131,29 +132,29 @@ namespace SecureVault.Model.Data
                 );
                 """);
 
-            dbContext.Database.ExecuteSqlRaw("""
+            await dbContext.Database.ExecuteSqlRawAsync("""
                 CREATE UNIQUE INDEX IF NOT EXISTS IX_AccountSettings_AccountId
                 ON AccountSettings (AccountId);
                 """);
         }
 
-        private static bool ColumnExists(SecureVaultDbContext dbContext, string tableName, string columnName)
+        private static async Task<bool> ColumnExistsAsync(SecureVaultDbContext dbContext, string tableName, string columnName)
         {
             var connection = dbContext.Database.GetDbConnection();
             var shouldClose = connection.State == ConnectionState.Closed;
 
             if (shouldClose)
             {
-                connection.Open();
+                await connection.OpenAsync();
             }
 
             try
             {
-                using var command = connection.CreateCommand();
+                await using var command = connection.CreateCommand();
                 command.CommandText = $"PRAGMA table_info({tableName});";
 
-                using var reader = command.ExecuteReader();
-                while (reader.Read())
+                await using var reader = await command.ExecuteReaderAsync();
+                while (await reader.ReadAsync())
                 {
                     if (reader["name"]?.ToString() == columnName)
                     {
@@ -167,14 +168,14 @@ namespace SecureVault.Model.Data
             {
                 if (shouldClose)
                 {
-                    connection.Close();
+                    await connection.CloseAsync();
                 }
             }
         }
 
-        private static void Seed(SecureVaultDbContext dbContext)
+        private static async Task SeedAsync(SecureVaultDbContext dbContext)
         {
-            if (!dbContext.Accounts.Any())
+            if (!await dbContext.Accounts.AnyAsync())
             {
                 dbContext.Accounts.Add(new Account
                 {
@@ -183,7 +184,7 @@ namespace SecureVault.Model.Data
                 });
             }
 
-            if (!dbContext.Categories.Any())
+            if (!await dbContext.Categories.AnyAsync())
             {
                 dbContext.Categories.AddRange(
                     new Category { CategoryType = "Social" },
@@ -191,21 +192,21 @@ namespace SecureVault.Model.Data
                     new Category { CategoryType = "Finance" });
             }
 
-            dbContext.SaveChanges();
+            await dbContext.SaveChangesAsync();
 
-            dbContext.Database.ExecuteSqlRaw("""
+            await dbContext.Database.ExecuteSqlRawAsync("""
                 INSERT OR IGNORE INTO AccountSettings
                     (AccountId, PasswordReminderEnabled, PasswordReminderMonths, LastPasswordChangedAt)
                 SELECT Id, 1, 6, datetime('now')
                 FROM Accounts;
                 """);
 
-            if (!dbContext.Credentials.Any())
+            if (!await dbContext.Credentials.AnyAsync())
             {
-                var ownerAccountId = dbContext.Accounts
+                var ownerAccountId = await dbContext.Accounts
                     .OrderBy(account => account.Id)
                     .Select(account => account.Id)
-                    .First();
+                    .FirstAsync();
 
                 dbContext.Credentials.AddRange(
                     new Credential
@@ -240,7 +241,8 @@ namespace SecureVault.Model.Data
                     });
             }
 
-            dbContext.SaveChanges();
+            await dbContext.SaveChangesAsync();
         }
+
     }
 }

@@ -18,7 +18,7 @@
                         Width="84"
                         HorizontalAlignment="Right"
                         VerticalAlignment="Top"
-                        Click="Close_Click"/>
+                        Command="{Binding CloseCommand}"/>
             </Grid>
 
             <DataGrid ItemsSource="{Binding HistoryItems}"

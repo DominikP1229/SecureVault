@@ -22,16 +22,16 @@
                         VerticalAlignment="Top">
                 <Button Content="History"
                         Width="98"
-                        Click="OpenHistory"/>
+                        Command="{Binding OpenHistoryCommand}"/>
                 <Button Content="Categories"
                         Width="112"
-                        Click="OpenCategories"/>
+                        Command="{Binding OpenCategoriesCommand}"/>
                 <Button Content="Settings"
                         Width="98"
-                        Click="OpenSettings"/>
+                        Command="{Binding OpenSettingsCommand}"/>
                 <Button Content="Logout"
                         Width="92"
-                        Click="Logout_Click"/>
+                        Command="{Binding LogoutCommand}"/>
             </StackPanel>
         </Grid>
 
@@ -61,14 +61,14 @@
                     <Button Content="Add"
                             Width="86"
                             Style="{StaticResource PrimaryButton}"
-                            Click="Add_Click"/>
+                            Command="{Binding OpenAddCommand}"/>
                     <Button Content="Copy"
                             Width="86"
-                            Click="Copy_Click"/>
+                            Command="{Binding CopyCredentialCommand}"/>
                     <Button Content="Delete"
                             Width="92"
                             Style="{StaticResource DangerButton}"
-                            Click="Delete_Click"/>
+                            Command="{Binding DeleteCommand}"/>
                 </StackPanel>
             </Grid>
         </Border>
@@ -79,8 +79,7 @@
             <DataGrid AutoGenerateColumns="False"
                       ItemsSource="{Binding FilteredCredentials}"
                       SelectedItem="{Binding SelectedCredential}"
-                      MouseDoubleClick="PasswordGrid_MouseDoubleClick"
-                      SelectionChanged="DataGrid_SelectionChanged">
+                      MouseDoubleClick="PasswordGrid_MouseDoubleClick">
                 <DataGrid.Columns>
                     <DataGridTextColumn Header="Title"
                                         Binding="{Binding Title}"
@@ -101,14 +100,17 @@
                                             HorizontalAlignment="Center">
                                     <Button Content="Copy"
                                             Padding="10,5"
-                                            Click="Copy_Click"/>
+                                            Command="{Binding DataContext.CopyCredentialCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                            CommandParameter="{Binding}"/>
                                     <Button Content="Edit"
                                             Padding="10,5"
-                                            Click="Edit_Click"/>
+                                            Command="{Binding DataContext.EditCredentialCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                            CommandParameter="{Binding}"/>
                                     <Button Content="Delete"
                                             Padding="10,5"
                                             Style="{StaticResource DangerButton}"
-                                            Click="Delete_Click"/>
+                                            Command="{Binding DataContext.DeleteCredentialCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                            CommandParameter="{Binding}"/>
                                 </StackPanel>
                             </DataTemplate>
                         </DataGridTemplateColumn.CellTemplate>

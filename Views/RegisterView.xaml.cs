@@ -1,98 +1,30 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows;
+using SecureVault.ViewModel;
 using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
 using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
-using SecureVault.Model.Services;
 
 namespace SecureVault.Views
 {
-    /// <summary>
-    /// Interaction logic for RegisterView.xaml
-    /// </summary>
     public partial class RegisterView : UserControl
     {
+        private readonly RegisterViewModel _viewModel = new();
 
         public RegisterView()
         {
             InitializeComponent();
-        }
-
-        private void Register_Click(object sender, RoutedEventArgs e)
-        {
-            var login = LoginBox.Text.Trim();
-            var password = PasswordBox.Password;
-
-            if (string.IsNullOrWhiteSpace(login))
-            {
-                MessageBox.Show("Login jest wymagany.", "Rejestracja", MessageBoxButton.OK, MessageBoxImage.Warning);
-                return;
-            }
-
-            if (login.Length < 3)
-            {
-                MessageBox.Show("Login musi mieć co najmniej 3 znaki.", "Rejestracja", MessageBoxButton.OK, MessageBoxImage.Warning);
-                return;
-            }
-
-            if (string.IsNullOrWhiteSpace(password))
-            {
-                MessageBox.Show("Hasło jest wymagane.", "Rejestracja", MessageBoxButton.OK, MessageBoxImage.Warning);
-                return;
-            }
-
-            if (password.Length < 8)
-            {
-                MessageBox.Show("Hasło musi mieć co najmniej 8 znaków.", "Rejestracja", MessageBoxButton.OK, MessageBoxImage.Warning);
-                return;
-            }
-
-            if (AccountStore.Exists(login))
-            {
-                MessageBox.Show("Konto o takim loginie już istnieje.", "Rejestracja", MessageBoxButton.OK, MessageBoxImage.Warning);
-                return;
-            }
-
-            AccountStore.Add(login, password);
-            var account = AccountStore.Accounts.FirstOrDefault(account => account.Name.Equals(login, StringComparison.OrdinalIgnoreCase));
-            if (account != null)
-            {
-                AccountSettingsStore.MarkPasswordChanged(account.Id);
-            }
-
-            if (this.Parent is Grid parentGrid && parentGrid.Parent is MainWindow mainWindow)
-            {
-                mainWindow.SwitchView(new LoginView());
-            }
-        }
-
-        private void Cancel_Click(object sender, RoutedEventArgs e)
-        {
-            if (this.Parent is Grid parentGrid && parentGrid.Parent is MainWindow mainWindow)
-            {
-                mainWindow.SwitchView(new LoginView());
-            }
+            DataContext = _viewModel;
+            _viewModel.BackToLoginRequested += HandleBackToLoginRequested;
         }
 
         private void RegisterView_KeyDown(object sender, KeyEventArgs e)
         {
             if (e.Key == Key.Enter)
             {
-                Register_Click(sender, e);
+                ExecuteRegister();
                 e.Handled = true;
             }
             else if (e.Key == Key.Escape)
             {
-                Cancel_Click(sender, e);
+                _viewModel.CancelCommand.Execute(null);
                 e.Handled = true;
             }
         }
@@ -101,8 +33,27 @@ namespace SecureVault.Views
         {
             if (e.Key == Key.Enter)
             {
-                Register_Click(sender, e);
+                ExecuteRegister();
                 e.Handled = true;
+            }
+        }
+
+        private void ExecuteRegister()
+        {
+            var password = _viewModel.Password;
+            if (_viewModel.RegisterCommand.CanExecute(password))
+            {
+                _viewModel.RegisterCommand.Execute(password);
+            }
+        }
+
+        private void HandleBackToLoginRequested()
+        {
+            _viewModel.BackToLoginRequested -= HandleBackToLoginRequested;
+
+            if (this.Parent is Grid parentGrid && parentGrid.Parent is MainWindow mainWindow)
+            {
+                mainWindow.SwitchView(new LoginView());
             }
         }
     }

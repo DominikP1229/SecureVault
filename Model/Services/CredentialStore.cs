@@ -1,69 +1,71 @@
+using Microsoft.EntityFrameworkCore;
 using SecureVault.Model.Data;
 using System;
 using System.Collections.ObjectModel;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace SecureVault.Model.Services
 {
     public static class CredentialStore
     {
-        public static ObservableCollection<Credential> Load()
+        public static async Task<ObservableCollection<Credential>> LoadAsync()
         {
             var encryption = VaultSession.RequireEncryption();
-            var account = VaultSession.CurrentAccount ?? throw new System.InvalidOperationException("Vault session is not initialized.");
+            var account = VaultSession.CurrentAccount ?? throw new InvalidOperationException("Vault session is not initialized.");
 
-            using var dbContext = DatabaseService.CreateContext();
-            var credentials = dbContext.Credentials
+            await using var dbContext = await DatabaseService.CreateContextAsync();
+            var credentials = await dbContext.Credentials
                 .Where(credential => credential.OwnerAccountId == account.Id)
                 .OrderBy(credential => credential.Title)
-                .ToList()
-                .Select(credential =>
-                {
-                    encryption.TryDecrypt(credential.EncryptedPassword, out var plainPassword);
-                    credential.EncryptedPassword = plainPassword;
-                    return credential;
-                });
+                .ToListAsync();
+
+            foreach (var credential in credentials)
+            {
+                encryption.TryDecrypt(credential.EncryptedPassword, out var plainPassword);
+                credential.EncryptedPassword = plainPassword;
+            }
 
             return new ObservableCollection<Credential>(credentials);
         }
 
-        public static string[] GetExpiredPasswordReminderTitles()
+        public static async Task<string[]> GetExpiredPasswordReminderTitlesAsync()
         {
-            var account = VaultSession.CurrentAccount ?? throw new System.InvalidOperationException("Vault session is not initialized.");
+            var account = VaultSession.CurrentAccount ?? throw new InvalidOperationException("Vault session is not initialized.");
 
-            using var dbContext = DatabaseService.CreateContext();
-            return dbContext.Credentials
+            await using var dbContext = await DatabaseService.CreateContextAsync();
+            return await dbContext.Credentials
                 .Where(credential =>
                     credential.OwnerAccountId == account.Id &&
                     credential.PasswordReminderEnabled &&
                     credential.LastPasswordChangedAt.AddMonths(credential.PasswordReminderMonths) <= DateTime.Now)
                 .OrderBy(credential => credential.Title)
                 .Select(credential => credential.Title)
-                .ToArray();
+                .ToArrayAsync();
         }
 
-        public static void Add(Credential credential)
+        public static async Task AddAsync(Credential credential)
         {
             var encryption = VaultSession.RequireEncryption();
-            var account = VaultSession.CurrentAccount ?? throw new System.InvalidOperationException("Vault session is not initialized.");
+            var account = VaultSession.CurrentAccount ?? throw new InvalidOperationException("Vault session is not initialized.");
 
             credential.OwnerAccountId = account.Id;
             var dbCredential = CopyForDatabase(credential);
             dbCredential.EncryptedPassword = encryption.Encrypt(credential.EncryptedPassword);
 
-            using var dbContext = DatabaseService.CreateContext();
+            await using var dbContext = await DatabaseService.CreateContextAsync();
             dbContext.Credentials.Add(dbCredential);
-            dbContext.SaveChanges();
-            PasswordHistoryStore.Add(credential, "Added");
+            await dbContext.SaveChangesAsync();
+            await PasswordHistoryStore.AddAsync(credential, "Added");
         }
 
-        public static void Update(Credential credential)
+        public static async Task UpdateAsync(Credential credential)
         {
             var encryption = VaultSession.RequireEncryption();
-            var account = VaultSession.CurrentAccount ?? throw new System.InvalidOperationException("Vault session is not initialized.");
+            var account = VaultSession.CurrentAccount ?? throw new InvalidOperationException("Vault session is not initialized.");
 
-            using var dbContext = DatabaseService.CreateContext();
-            var dbCredential = dbContext.Credentials.Single(item => item.Id == credential.Id && item.OwnerAccountId == account.Id);
+            await using var dbContext = await DatabaseService.CreateContextAsync();
+            var dbCredential = await dbContext.Credentials.SingleAsync(item => item.Id == credential.Id && item.OwnerAccountId == account.Id);
             dbCredential.Title = credential.Title;
             dbCredential.Username = credential.Username;
             dbCredential.Category = credential.Category;
@@ -74,29 +76,29 @@ namespace SecureVault.Model.Services
             dbCredential.PasswordReminderMonths = credential.PasswordReminderMonths;
             dbCredential.LastPasswordChangedAt = credential.LastPasswordChangedAt;
             dbCredential.EncryptedPassword = encryption.Encrypt(credential.EncryptedPassword);
-            dbContext.SaveChanges();
-            PasswordHistoryStore.Add(credential, "Edited");
+            await dbContext.SaveChangesAsync();
+            await PasswordHistoryStore.AddAsync(credential, "Edited");
         }
 
-        public static void Remove(Credential credential)
+        public static async Task RemoveAsync(Credential credential)
         {
-            var account = VaultSession.CurrentAccount ?? throw new System.InvalidOperationException("Vault session is not initialized.");
+            var account = VaultSession.CurrentAccount ?? throw new InvalidOperationException("Vault session is not initialized.");
 
-            using var dbContext = DatabaseService.CreateContext();
-            var dbCredential = dbContext.Credentials.Single(item => item.Id == credential.Id && item.OwnerAccountId == account.Id);
+            await using var dbContext = await DatabaseService.CreateContextAsync();
+            var dbCredential = await dbContext.Credentials.SingleAsync(item => item.Id == credential.Id && item.OwnerAccountId == account.Id);
             dbContext.Credentials.Remove(dbCredential);
-            dbContext.SaveChanges();
-            PasswordHistoryStore.Add(credential, "Deleted");
+            await dbContext.SaveChangesAsync();
+            await PasswordHistoryStore.AddAsync(credential, "Deleted");
         }
 
-        public static void ReEncryptForCurrentAccount(EncryptionService oldEncryption, EncryptionService newEncryption)
+        public static async Task ReEncryptForCurrentAccountAsync(EncryptionService oldEncryption, EncryptionService newEncryption)
         {
-            var account = VaultSession.CurrentAccount ?? throw new System.InvalidOperationException("Vault session is not initialized.");
+            var account = VaultSession.CurrentAccount ?? throw new InvalidOperationException("Vault session is not initialized.");
 
-            using var dbContext = DatabaseService.CreateContext();
-            var credentials = dbContext.Credentials
+            await using var dbContext = await DatabaseService.CreateContextAsync();
+            var credentials = await dbContext.Credentials
                 .Where(item => item.OwnerAccountId == account.Id)
-                .ToList();
+                .ToListAsync();
 
             foreach (var credential in credentials)
             {
@@ -104,7 +106,7 @@ namespace SecureVault.Model.Services
                 credential.EncryptedPassword = newEncryption.Encrypt(plainPassword);
             }
 
-            dbContext.SaveChanges();
+            await dbContext.SaveChangesAsync();
         }
 
         private static Credential CopyForDatabase(Credential credential)

@@ -1,5 +1,6 @@
 using SecureVault.Model;
 using System;
+using System.Threading.Tasks;
 
 namespace SecureVault.Model.Services
 {
@@ -17,16 +18,16 @@ namespace SecureVault.Model.Services
             Encryption = new EncryptionService(masterPassword);
         }
 
-        public static void ChangePassword(string newAccountPassword)
+        public static async Task ChangePasswordAsync(string newAccountPassword)
         {
             var account = CurrentAccount ?? throw new InvalidOperationException("Vault session is not initialized.");
             var oldEncryption = RequireEncryption();
             var newMasterPassword = PasswordService.CreateMasterPassword(account, newAccountPassword);
             var newEncryption = new EncryptionService(newMasterPassword);
 
-            CredentialStore.ReEncryptForCurrentAccount(oldEncryption, newEncryption);
-            AccountStore.UpdatePassword(account, newAccountPassword);
-            AccountSettingsStore.MarkPasswordChanged(account.Id);
+            await CredentialStore.ReEncryptForCurrentAccountAsync(oldEncryption, newEncryption);
+            await AccountStore.UpdatePasswordAsync(account, newAccountPassword);
+            await AccountSettingsStore.MarkPasswordChangedAsync(account.Id);
             Encryption = newEncryption;
         }
 

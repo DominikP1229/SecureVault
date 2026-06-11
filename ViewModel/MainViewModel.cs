@@ -5,6 +5,8 @@ using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using System.Threading.Tasks;
+using System.Windows;
 using System.Windows.Data;
 
 namespace SecureVault.ViewModel
@@ -13,8 +15,9 @@ namespace SecureVault.ViewModel
     {
         private readonly PasswordGenerator _passwordGenerator = new();
         private readonly PasswordStrengthService _passwordStrengthService = new();
+        private bool _isEditMode;
 
-        public ObservableCollection<Credential> Credentials { get; set; } = CredentialStore.Load();
+        public ObservableCollection<Credential> Credentials { get; set; } = new();
         public ObservableCollection<Category> Categories => CategoryStore.Categories;
 
         public ObservableCollection<Category> FilterCategories { get; } = new()
@@ -22,7 +25,7 @@ namespace SecureVault.ViewModel
             new Category { CategoryType = "All" }
         };
 
-        public ICollectionView FilteredCredentials { get; }
+        public ICollectionView? FilteredCredentials { get; private set; }
 
         private Category? _selectedFilterCategory;
         public Category? SelectedFilterCategory
@@ -149,10 +152,34 @@ namespace SecureVault.ViewModel
             set { _errorMessage = value; OnPropertyChanged(); }
         }
 
-        public RelayCommand AddCommand { get; }
-        public RelayCommand DeleteCommand { get; }
-        public RelayCommand EditCommand { get; }
+        public AsyncRelayCommand AddCommand { get; }
+        public AsyncRelayCommand DeleteCommand { get; }
+        public AsyncRelayCommand EditCommand { get; }
         public RelayCommand GeneratePasswordCommand { get; }
+        public RelayCommand OpenAddCommand { get; }
+        public RelayCommand OpenEditCommand { get; }
+        public RelayCommand OpenDetailsCommand { get; }
+        public RelayCommand OpenHistoryCommand { get; }
+        public RelayCommand OpenCategoriesCommand { get; }
+        public RelayCommand OpenSettingsCommand { get; }
+        public RelayCommand LogoutCommand { get; }
+        public AsyncRelayCommand SaveCredentialCommand { get; }
+        public RelayCommand CancelCredentialFormCommand { get; }
+        public RelayCommand<Credential> CopyCredentialCommand { get; }
+        public AsyncRelayCommand<Credential> DeleteCredentialCommand { get; }
+        public RelayCommand<Credential> EditCredentialCommand { get; }
+
+        public event Action<MainNavigationTarget>? NavigationRequested;
+
+        public bool IsEditMode
+        {
+            get => _isEditMode;
+            set
+            {
+                _isEditMode = value;
+                OnPropertyChanged();
+            }
+        }
 
         public MainViewModel()
         {
@@ -187,19 +214,137 @@ namespace SecureVault.ViewModel
                 FilteredCredentials?.Refresh();
             };
 
-            AddCommand = new RelayCommand(Add);
-            DeleteCommand = new RelayCommand(Delete, () => SelectedCredential != null);
-            EditCommand = new RelayCommand(Edit, () => SelectedCredential != null);
+            AddCommand = new AsyncRelayCommand(AddAsync);
+            DeleteCommand = new AsyncRelayCommand(DeleteAsync, () => SelectedCredential != null);
+            EditCommand = new AsyncRelayCommand(EditAsync, () => SelectedCredential != null);
             GeneratePasswordCommand = new RelayCommand(GeneratePassword);
+            OpenAddCommand = new RelayCommand(OpenAdd);
+            OpenEditCommand = new RelayCommand(OpenEdit);
+            OpenDetailsCommand = new RelayCommand(OpenDetails, () => SelectedCredential != null);
+            OpenHistoryCommand = new RelayCommand(() => NavigationRequested?.Invoke(MainNavigationTarget.History));
+            OpenCategoriesCommand = new RelayCommand(() => NavigationRequested?.Invoke(MainNavigationTarget.Categories));
+            OpenSettingsCommand = new RelayCommand(() => NavigationRequested?.Invoke(MainNavigationTarget.Settings));
+            LogoutCommand = new RelayCommand(Logout);
+            SaveCredentialCommand = new AsyncRelayCommand(SaveCredentialAsync);
+            CancelCredentialFormCommand = new RelayCommand(() => NavigationRequested?.Invoke(MainNavigationTarget.Main));
+            CopyCredentialCommand = new RelayCommand<Credential>(CopyCredential);
+            DeleteCredentialCommand = new AsyncRelayCommand<Credential>(DeleteCredentialAsync);
+            EditCredentialCommand = new RelayCommand<Credential>(EditCredential);
 
             FilteredCredentials = CollectionViewSource.GetDefaultView(Credentials);
             FilteredCredentials.Filter = FilterCredential;
             SelectedFilterCategory = FilterCategories.FirstOrDefault();
         }
 
+        public async Task LoadCredentialsAsync()
+        {
+            Credentials = await CredentialStore.LoadAsync();
+            FilteredCredentials = CollectionViewSource.GetDefaultView(Credentials);
+            FilteredCredentials.Filter = FilterCredential;
+            OnPropertyChanged(nameof(Credentials));
+            OnPropertyChanged(nameof(FilteredCredentials));
+        }
+
         private void GeneratePassword()
         {
             Password = _passwordGenerator.Generate(16, true);
+        }
+
+        private void OpenAdd()
+        {
+            SelectedCredential = null;
+            ClearForm();
+            IsEditMode = false;
+            NavigationRequested?.Invoke(MainNavigationTarget.CredentialForm);
+        }
+
+        private void OpenEdit()
+        {
+            if (SelectedCredential == null)
+            {
+                MessageBox.Show("Wybierz wpis do edycji.", "Edycja", MessageBoxButton.OK, MessageBoxImage.Information);
+                return;
+            }
+
+            IsEditMode = true;
+            NavigationRequested?.Invoke(MainNavigationTarget.CredentialForm);
+        }
+
+        private void OpenDetails()
+        {
+            if (SelectedCredential != null)
+            {
+                NavigationRequested?.Invoke(MainNavigationTarget.CredentialDetails);
+            }
+        }
+
+        private void Logout()
+        {
+            VaultSession.SignOut();
+            NavigationRequested?.Invoke(MainNavigationTarget.Login);
+        }
+
+        private async Task SaveCredentialAsync()
+        {
+            var countBeforeSave = Credentials.Count;
+
+            if (IsEditMode)
+            {
+                await EditAsync();
+
+                if (string.IsNullOrWhiteSpace(ErrorMessage))
+                {
+                    NavigationRequested?.Invoke(MainNavigationTarget.Main);
+                }
+
+                return;
+            }
+
+            await AddAsync();
+
+            if (Credentials.Count > countBeforeSave)
+            {
+                NavigationRequested?.Invoke(MainNavigationTarget.Main);
+            }
+        }
+
+        private void CopyCredential(Credential? credential)
+        {
+            var credentialToCopy = credential ?? SelectedCredential;
+            if (credentialToCopy == null)
+            {
+                MessageBox.Show("Wybierz wpis, z którego chcesz skopiować hasło.", "Kopiowanie", MessageBoxButton.OK, MessageBoxImage.Information);
+                return;
+            }
+
+            if (string.IsNullOrEmpty(credentialToCopy.EncryptedPassword))
+            {
+                MessageBox.Show("Wybrany wpis nie ma zapisanego hasła.", "Kopiowanie", MessageBoxButton.OK, MessageBoxImage.Information);
+                return;
+            }
+
+            Clipboard.SetText(credentialToCopy.EncryptedPassword);
+            MessageBox.Show("Hasło skopiowane do schowka.", "Kopiowanie", MessageBoxButton.OK, MessageBoxImage.Information);
+        }
+
+        private async Task DeleteCredentialAsync(Credential? credential)
+        {
+            if (credential != null)
+            {
+                SelectedCredential = credential;
+            }
+
+            await DeleteAsync();
+        }
+
+        private void EditCredential(Credential? credential)
+        {
+            if (credential != null)
+            {
+                SelectedCredential = credential;
+            }
+
+            OpenEdit();
         }
 
         private bool FilterCredential(object item)
@@ -230,7 +375,7 @@ namespace SecureVault.ViewModel
                 || credential.Account.Contains(searchText, StringComparison.OrdinalIgnoreCase);
         }
 
-        private void Add()
+        private async Task AddAsync()
         {
             ErrorMessage = string.Empty;
 
@@ -260,14 +405,14 @@ namespace SecureVault.ViewModel
                 LastPasswordChangedAt = DateTime.Now
             };
 
-            CredentialStore.Add(credential);
+            await CredentialStore.AddAsync(credential);
             Credentials.Add(credential);
 
-            FilteredCredentials.Refresh();
+            FilteredCredentials?.Refresh();
             ClearForm();
         }
 
-        private void Delete()
+        private async Task DeleteAsync()
         {
             if (SelectedCredential == null)
             {
@@ -275,13 +420,13 @@ namespace SecureVault.ViewModel
                 return;
             }
 
-            CredentialStore.Remove(SelectedCredential);
+            await CredentialStore.RemoveAsync(SelectedCredential);
             Credentials.Remove(SelectedCredential);
-            FilteredCredentials.Refresh();
+            FilteredCredentials?.Refresh();
             ClearForm();
         }
 
-        private void Edit()
+        private async Task EditAsync()
         {
             ErrorMessage = string.Empty;
 
@@ -315,9 +460,9 @@ namespace SecureVault.ViewModel
             SelectedCredential.PasswordReminderMonths = int.Parse(CredentialPasswordReminderMonths);
             SelectedCredential.LastPasswordChangedAt = DateTime.Now;
 
-            CredentialStore.Update(SelectedCredential);
+            await CredentialStore.UpdateAsync(SelectedCredential);
             OnPropertyChanged(nameof(Credentials));
-            FilteredCredentials.Refresh();
+            FilteredCredentials?.Refresh();
         }
 
         private bool ValidateCredential()
@@ -392,5 +537,16 @@ namespace SecureVault.ViewModel
         public event PropertyChangedEventHandler? PropertyChanged;
         protected void OnPropertyChanged([CallerMemberName] string? name = null)
             => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
+    }
+
+    public enum MainNavigationTarget
+    {
+        Main,
+        Login,
+        CredentialForm,
+        CredentialDetails,
+        History,
+        Categories,
+        Settings
     }
 }

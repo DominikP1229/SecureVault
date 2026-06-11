@@ -1,6 +1,8 @@
+using Microsoft.EntityFrameworkCore;
 using SecureVault.Model.Data;
 using System.Collections.ObjectModel;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace SecureVault.Model.Services
 {
@@ -8,46 +10,44 @@ namespace SecureVault.Model.Services
     {
         public static ObservableCollection<Category> Categories { get; } = new();
 
-        static CategoryStore()
-        {
-            Load();
-        }
-
         public static bool Exists(string categoryType)
         {
             return Categories.Any(category => category.CategoryType.Equals(categoryType, System.StringComparison.OrdinalIgnoreCase));
         }
 
-        public static void Add(string categoryType)
+        public static async Task LoadAsync()
+        {
+            await using var dbContext = await DatabaseService.CreateContextAsync();
+            var categories = await dbContext.Categories
+                .OrderBy(category => category.CategoryType)
+                .ToListAsync();
+
+            Categories.Clear();
+            foreach (var category in categories)
+            {
+                Categories.Add(category);
+            }
+        }
+
+        public static async Task AddAsync(string categoryType)
         {
             var category = new Category
             {
                 CategoryType = categoryType.Trim()
             };
 
-            using var dbContext = DatabaseService.CreateContext();
+            await using var dbContext = await DatabaseService.CreateContextAsync();
             dbContext.Categories.Add(category);
-            dbContext.SaveChanges();
+            await dbContext.SaveChangesAsync();
             Categories.Add(category);
         }
 
-        public static void Remove(Category category)
+        public static async Task RemoveAsync(Category category)
         {
-            using var dbContext = DatabaseService.CreateContext();
+            await using var dbContext = await DatabaseService.CreateContextAsync();
             dbContext.Categories.Remove(category);
-            dbContext.SaveChanges();
+            await dbContext.SaveChangesAsync();
             Categories.Remove(category);
-        }
-
-        private static void Load()
-        {
-            using var dbContext = DatabaseService.CreateContext();
-            Categories.Clear();
-
-            foreach (var category in dbContext.Categories.OrderBy(category => category.CategoryType))
-            {
-                Categories.Add(category);
-            }
         }
     }
 }

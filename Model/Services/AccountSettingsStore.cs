@@ -1,15 +1,16 @@
+using Microsoft.EntityFrameworkCore;
 using SecureVault.Model.Data;
 using System;
-using System.Linq;
+using System.Threading.Tasks;
 
 namespace SecureVault.Model.Services
 {
     public static class AccountSettingsStore
     {
-        public static AccountSettings GetOrCreate(int accountId)
+        public static async Task<AccountSettings> GetOrCreateAsync(int accountId)
         {
-            using var dbContext = DatabaseService.CreateContext();
-            var settings = dbContext.AccountSettings.SingleOrDefault(item => item.AccountId == accountId);
+            await using var dbContext = await DatabaseService.CreateContextAsync();
+            var settings = await dbContext.AccountSettings.SingleOrDefaultAsync(item => item.AccountId == accountId);
 
             if (settings != null)
             {
@@ -25,22 +26,22 @@ namespace SecureVault.Model.Services
             };
 
             dbContext.AccountSettings.Add(settings);
-            dbContext.SaveChanges();
+            await dbContext.SaveChangesAsync();
             return settings;
         }
 
-        public static void Save(AccountSettings settings)
+        public static async Task SaveAsync(AccountSettings settings)
         {
-            using var dbContext = DatabaseService.CreateContext();
+            await using var dbContext = await DatabaseService.CreateContextAsync();
             dbContext.AccountSettings.Update(settings);
-            dbContext.SaveChanges();
+            await dbContext.SaveChangesAsync();
         }
 
-        public static void MarkPasswordChanged(int accountId)
+        public static async Task MarkPasswordChangedAsync(int accountId)
         {
-            var settings = GetOrCreate(accountId);
+            var settings = await GetOrCreateAsync(accountId);
             settings.LastPasswordChangedAt = DateTime.Now;
-            Save(settings);
+            await SaveAsync(settings);
         }
 
         public static bool ShouldRemind(AccountSettings settings)
