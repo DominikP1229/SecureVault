@@ -15,6 +15,7 @@ namespace SecureVault.ViewModel
     {
         private readonly PasswordGenerator _passwordGenerator = new();
         private readonly PasswordStrengthService _passwordStrengthService = new();
+        private readonly IFileDialogService _fileDialogService;
         private bool _isEditMode;
 
         public ObservableCollection<Credential> Credentials { get; set; } = new();
@@ -164,6 +165,8 @@ namespace SecureVault.ViewModel
         public RelayCommand OpenSettingsCommand { get; }
         public RelayCommand LogoutCommand { get; }
         public AsyncRelayCommand SaveCredentialCommand { get; }
+        public AsyncRelayCommand ImportCsvCommand { get; }
+        public AsyncRelayCommand ExportCsvCommand { get; }
         public RelayCommand CancelCredentialFormCommand { get; }
         public RelayCommand<Credential> CopyCredentialCommand { get; }
         public AsyncRelayCommand<Credential> DeleteCredentialCommand { get; }
@@ -182,7 +185,14 @@ namespace SecureVault.ViewModel
         }
 
         public MainViewModel()
+            : this(new FileDialogService())
         {
+        }
+
+        public MainViewModel(IFileDialogService fileDialogService)
+        {
+            _fileDialogService = fileDialogService;
+
             foreach (var category in Categories)
             {
                 FilterCategories.Add(category);
@@ -226,6 +236,8 @@ namespace SecureVault.ViewModel
             OpenSettingsCommand = new RelayCommand(() => NavigationRequested?.Invoke(MainNavigationTarget.Settings));
             LogoutCommand = new RelayCommand(Logout);
             SaveCredentialCommand = new AsyncRelayCommand(SaveCredentialAsync);
+            ImportCsvCommand = new AsyncRelayCommand(ImportCsvAsync);
+            ExportCsvCommand = new AsyncRelayCommand(ExportCsvAsync);
             CancelCredentialFormCommand = new RelayCommand(() => NavigationRequested?.Invoke(MainNavigationTarget.Main));
             CopyCredentialCommand = new RelayCommand<Credential>(CopyCredential);
             DeleteCredentialCommand = new AsyncRelayCommand<Credential>(DeleteCredentialAsync);
@@ -262,7 +274,7 @@ namespace SecureVault.ViewModel
         {
             if (SelectedCredential == null)
             {
-                MessageBox.Show("Wybierz wpis do edycji.", "Edycja", MessageBoxButton.OK, MessageBoxImage.Information);
+                MessageBox.Show("Select an entry to edit.", "Edit", MessageBoxButton.OK, MessageBoxImage.Information);
                 return;
             }
 
@@ -308,23 +320,113 @@ namespace SecureVault.ViewModel
             }
         }
 
+        private async Task ImportCsvAsync()
+        {
+            var filePath = _fileDialogService.PickCsvToOpen();
+            if (string.IsNullOrWhiteSpace(filePath))
+            {
+                return;
+            }
+
+            try
+            {
+                var importedCredentials = await CredentialCsvService.ImportAsync(filePath);
+                var result = new CredentialCsvImportResult();
+
+                foreach (var credential in importedCredentials)
+                {
+                    if (Credentials.Any(existing =>
+                            existing.Category.Equals(credential.Category, StringComparison.OrdinalIgnoreCase) &&
+                            existing.Title.Equals(credential.Title, StringComparison.OrdinalIgnoreCase)))
+                    {
+                        result.SkippedCount++;
+                        continue;
+                    }
+
+                    if (!CategoryStore.Exists(credential.Category))
+                    {
+                        await CategoryStore.AddAsync(credential.Category);
+                    }
+
+                    await CredentialStore.AddAsync(credential);
+                    Credentials.Add(credential);
+                    result.ImportedCount++;
+                }
+
+                FilteredCredentials?.Refresh();
+                MessageBox.Show(
+                    $"Import completed. Added: {result.ImportedCount}, skipped: {result.SkippedCount}.",
+                    "Import CSV",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Information);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(
+                    $"Could not import CSV: {ex.Message}",
+                    "Import CSV",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Error);
+            }
+        }
+
+        private async Task ExportCsvAsync()
+        {
+            if (Credentials.Count == 0)
+            {
+                MessageBox.Show("There are no passwords to export.", "Export CSV", MessageBoxButton.OK, MessageBoxImage.Information);
+                return;
+            }
+
+            var confirmation = MessageBox.Show(
+                "The CSV file will contain plain-text passwords. Save it only in a secure location. Continue?",
+                "Export CSV",
+                MessageBoxButton.YesNo,
+                MessageBoxImage.Warning);
+
+            if (confirmation != MessageBoxResult.Yes)
+            {
+                return;
+            }
+
+            var filePath = _fileDialogService.PickCsvToSave();
+            if (string.IsNullOrWhiteSpace(filePath))
+            {
+                return;
+            }
+
+            try
+            {
+                await CredentialCsvService.ExportAsync(Credentials, filePath);
+                MessageBox.Show("CSV export completed.", "Export CSV", MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(
+                    $"Could not export CSV: {ex.Message}",
+                    "Export CSV",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Error);
+            }
+        }
+
         private void CopyCredential(Credential? credential)
         {
             var credentialToCopy = credential ?? SelectedCredential;
             if (credentialToCopy == null)
             {
-                MessageBox.Show("Wybierz wpis, z którego chcesz skopiować hasło.", "Kopiowanie", MessageBoxButton.OK, MessageBoxImage.Information);
+                MessageBox.Show("Select an entry to copy the password from.", "Copy", MessageBoxButton.OK, MessageBoxImage.Information);
                 return;
             }
 
             if (string.IsNullOrEmpty(credentialToCopy.EncryptedPassword))
             {
-                MessageBox.Show("Wybrany wpis nie ma zapisanego hasła.", "Kopiowanie", MessageBoxButton.OK, MessageBoxImage.Information);
+                MessageBox.Show("The selected entry does not have a saved password.", "Copy", MessageBoxButton.OK, MessageBoxImage.Information);
                 return;
             }
 
             Clipboard.SetText(credentialToCopy.EncryptedPassword);
-            MessageBox.Show("Hasło skopiowane do schowka.", "Kopiowanie", MessageBoxButton.OK, MessageBoxImage.Information);
+            MessageBox.Show("Password copied to clipboard.", "Copy", MessageBoxButton.OK, MessageBoxImage.Information);
         }
 
         private async Task DeleteCredentialAsync(Credential? credential)
@@ -388,7 +490,7 @@ namespace SecureVault.ViewModel
                     c.Category.Equals(Category.Trim(), StringComparison.OrdinalIgnoreCase) &&
                     c.Title.Equals(Title.Trim(), StringComparison.OrdinalIgnoreCase)))
             {
-                ErrorMessage = "Title musi być unikalny w wybranej kategorii.";
+                ErrorMessage = "Title must be unique in the selected category.";
                 return;
             }
 
@@ -402,7 +504,9 @@ namespace SecureVault.ViewModel
                 Description = Notes.Trim(),
                 PasswordReminderEnabled = CredentialPasswordReminderEnabled,
                 PasswordReminderMonths = int.Parse(CredentialPasswordReminderMonths),
-                LastPasswordChangedAt = DateTime.Now
+                LastPasswordChangedAt = DateTime.Now,
+                CreatedDate = DateTime.Now,
+                ModifiedDate = DateTime.Now
             };
 
             await CredentialStore.AddAsync(credential);
@@ -416,7 +520,7 @@ namespace SecureVault.ViewModel
         {
             if (SelectedCredential == null)
             {
-                ErrorMessage = "Wybierz element do usunięcia.";
+                ErrorMessage = "Select an item to delete.";
                 return;
             }
 
@@ -432,7 +536,7 @@ namespace SecureVault.ViewModel
 
             if (SelectedCredential == null)
             {
-                ErrorMessage = "Wybierz element do edycji.";
+                ErrorMessage = "Select an item to edit.";
                 return;
             }
 
@@ -446,7 +550,7 @@ namespace SecureVault.ViewModel
                     c.Category.Equals(Category.Trim(), StringComparison.OrdinalIgnoreCase) &&
                     c.Title.Equals(Title.Trim(), StringComparison.OrdinalIgnoreCase)))
             {
-                ErrorMessage = "Title musi być unikalny w wybranej kategorii.";
+                ErrorMessage = "Title must be unique in the selected category.";
                 return;
             }
 
@@ -459,6 +563,7 @@ namespace SecureVault.ViewModel
             SelectedCredential.PasswordReminderEnabled = CredentialPasswordReminderEnabled;
             SelectedCredential.PasswordReminderMonths = int.Parse(CredentialPasswordReminderMonths);
             SelectedCredential.LastPasswordChangedAt = DateTime.Now;
+            SelectedCredential.ModifiedDate = DateTime.Now;
 
             await CredentialStore.UpdateAsync(SelectedCredential);
             OnPropertyChanged(nameof(Credentials));
@@ -469,44 +574,44 @@ namespace SecureVault.ViewModel
         {
             if (string.IsNullOrWhiteSpace(Title))
             {
-                ErrorMessage = "Title jest wymagany.";
+                ErrorMessage = "Title is required.";
                 return false;
             }
 
             if (string.IsNullOrWhiteSpace(Username))
             {
-                ErrorMessage = "Username jest wymagany.";
+                ErrorMessage = "Username is required.";
                 return false;
             }
 
             if (string.IsNullOrWhiteSpace(Category))
             {
-                ErrorMessage = "Wybierz kategorię.";
+                ErrorMessage = "Select a category.";
                 return false;
             }
 
             if (!CategoryStore.Exists(Category.Trim()))
             {
-                ErrorMessage = "Wybrana kategoria nie istnieje.";
+                ErrorMessage = "The selected category does not exist.";
                 return false;
             }
 
             if (string.IsNullOrWhiteSpace(Password))
             {
-                ErrorMessage = "Password jest wymagany.";
+                ErrorMessage = "Password is required.";
                 return false;
             }
 
             if (Password.Length < 8)
             {
-                ErrorMessage = "Password musi mieć co najmniej 8 znaków.";
+                ErrorMessage = "Password must be at least 8 characters long.";
                 return false;
             }
 
             if (!string.IsNullOrWhiteSpace(Website) &&
                 !Uri.TryCreate(Website.Trim(), UriKind.Absolute, out _))
             {
-                ErrorMessage = "Website musi być poprawnym adresem URL.";
+                ErrorMessage = "Website must be a valid URL.";
                 return false;
             }
 
@@ -514,7 +619,7 @@ namespace SecureVault.ViewModel
                 reminderMonths < 1 ||
                 reminderMonths > 60)
             {
-                ErrorMessage = "Okres przypomnienia hasła musi wynosić od 1 do 60 miesięcy.";
+                ErrorMessage = "Password reminder interval must be between 1 and 60 months.";
                 return false;
             }
 

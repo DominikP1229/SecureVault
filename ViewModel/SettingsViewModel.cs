@@ -64,34 +64,34 @@ namespace SecureVault.ViewModel
             var account = VaultSession.CurrentAccount;
             if (account == null)
             {
-                ReminderStatus = "Brak aktywnej sesji uzytkownika.";
+                ReminderStatus = "No active user session.";
                 return;
             }
 
             _settings = await AccountSettingsStore.GetOrCreateAsync(account.Id);
             ReminderEnabled = _settings.PasswordReminderEnabled;
             ReminderMonths = _settings.PasswordReminderMonths.ToString();
-            ReminderStatus = $"Ostatnia zmiana hasla: {_settings.LastPasswordChangedAt:yyyy-MM-dd}.";
+            ReminderStatus = $"Last password change: {_settings.LastPasswordChangedAt:yyyy-MM-dd}.";
         }
 
         private async Task SaveReminderSettingsAsync()
         {
             if (_settings == null)
             {
-                ReminderStatus = "Nie mozna zapisac ustawien bez aktywnego konta.";
+                ReminderStatus = "Cannot save settings without an active account.";
                 return;
             }
 
             if (!int.TryParse(ReminderMonths, out var months) || months < 1 || months > 60)
             {
-                ReminderStatus = "Podaj okres od 1 do 60 miesiecy.";
+                ReminderStatus = "Enter an interval from 1 to 60 months.";
                 return;
             }
 
             _settings.PasswordReminderEnabled = ReminderEnabled;
             _settings.PasswordReminderMonths = months;
             await AccountSettingsStore.SaveAsync(_settings);
-            ReminderStatus = "Ustawienia przypomnienia zostaly zapisane.";
+            ReminderStatus = "Reminder settings have been saved.";
         }
 
         public event PropertyChangedEventHandler? PropertyChanged;

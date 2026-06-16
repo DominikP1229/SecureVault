@@ -62,13 +62,12 @@
                             Width="86"
                             Style="{StaticResource PrimaryButton}"
                             Command="{Binding OpenAddCommand}"/>
-                    <Button Content="Copy"
-                            Width="86"
-                            Command="{Binding CopyCredentialCommand}"/>
-                    <Button Content="Delete"
-                            Width="92"
-                            Style="{StaticResource DangerButton}"
-                            Command="{Binding DeleteCommand}"/>
+                    <Button Content="Import CSV"
+                            Width="104"
+                            Command="{Binding ImportCsvCommand}"/>
+                    <Button Content="Export CSV"
+                            Width="104"
+                            Command="{Binding ExportCsvCommand}"/>
                 </StackPanel>
             </Grid>
         </Border>
@@ -80,6 +79,24 @@
                       ItemsSource="{Binding FilteredCredentials}"
                       SelectedItem="{Binding SelectedCredential}"
                       MouseDoubleClick="PasswordGrid_MouseDoubleClick">
+                <DataGrid.RowStyle>
+                    <Style TargetType="DataGridRow" BasedOn="{StaticResource {x:Type DataGridRow}}">
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding IsPasswordReminderExpired}" Value="True">
+                                <Setter Property="Background" Value="#3A2429"/>
+                                <Setter Property="BorderBrush" Value="{StaticResource DangerBrush}"/>
+                                <Setter Property="BorderThickness" Value="0,0,4,0"/>
+                            </DataTrigger>
+                            <MultiDataTrigger>
+                                <MultiDataTrigger.Conditions>
+                                    <Condition Binding="{Binding IsPasswordReminderExpired}" Value="True"/>
+                                    <Condition Binding="{Binding IsSelected, RelativeSource={RelativeSource Self}}" Value="True"/>
+                                </MultiDataTrigger.Conditions>
+                                <Setter Property="Background" Value="#5A2B38"/>
+                            </MultiDataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </DataGrid.RowStyle>
                 <DataGrid.Columns>
                     <DataGridTextColumn Header="Title"
                                         Binding="{Binding Title}"
@@ -93,6 +110,9 @@
                     <DataGridTextColumn Header="Website"
                                         Binding="{Binding Account}"
                                         Width="1.4*"/>
+                    <DataGridTextColumn Header="Next reminder"
+                                        Binding="{Binding NextPasswordReminderDate, StringFormat={}{0:yyyy-MM-dd}, TargetNullValue=-}"
+                                        Width="130"/>
                     <DataGridTemplateColumn Header="Actions" Width="210">
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>

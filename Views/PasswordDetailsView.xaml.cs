@@ -32,9 +32,14 @@ namespace SecureVault.Views
         private void HandleNavigationRequested(PasswordDetailsNavigationTarget target)
         {
             _viewModel.NavigationRequested -= HandleNavigationRequested;
-            SwitchTo(target == PasswordDetailsNavigationTarget.Edit
-                ? new AddPasswordView(_mainViewModel, true)
-                : new MainView(_mainViewModel));
+
+            if (target == PasswordDetailsNavigationTarget.Edit)
+            {
+                ShowInOverlayOrSwitchTo(new AddPasswordView(_mainViewModel, true));
+                return;
+            }
+
+            CloseOverlayOrSwitchTo(new MainView(_mainViewModel));
         }
 
         private void SwitchTo(UIElement view)
@@ -43,6 +48,31 @@ namespace SecureVault.Views
             {
                 mainWindow.SwitchView(view);
             }
+        }
+
+        private void ShowInOverlayOrSwitchTo(UIElement view)
+        {
+            if (Parent is ContentControl contentControl)
+            {
+                contentControl.Content = view;
+                return;
+            }
+
+            SwitchTo(view);
+        }
+
+        private void CloseOverlayOrSwitchTo(UIElement fallbackView)
+        {
+            if (Parent is ContentControl contentControl &&
+                contentControl.Parent is Border border &&
+                border.Name == "SubViewContainer")
+            {
+                contentControl.Content = null;
+                border.Visibility = Visibility.Collapsed;
+                return;
+            }
+
+            SwitchTo(fallbackView);
         }
     }
 }

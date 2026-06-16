@@ -17,8 +17,8 @@ namespace SecureVault
             catch (System.Exception ex)
             {
                 MessageBox.Show(
-                    $"Nie udało się zainicjalizować bazy danych: {ex.Message}",
-                    "Błąd bazy danych",
+                    $"Could not initialize the database: {ex.Message}",
+                    "Database error",
                     MessageBoxButton.OK,
                     MessageBoxImage.Error);
                 Shutdown();

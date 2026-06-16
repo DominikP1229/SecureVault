@@ -47,7 +47,7 @@ namespace SecureVault.Views
             switch (target)
             {
                 case MainNavigationTarget.Main:
-                    SwitchRoot(new MainView(_viewModel));
+                    CloseOverlayOrSwitchRoot(new MainView(_viewModel));
                     break;
                 case MainNavigationTarget.Login:
                     SwitchRoot(new LoginView());
@@ -74,6 +74,25 @@ namespace SecureVault.Views
             if (Parent is Grid parentGrid && parentGrid.Parent is MainWindow mainWindow)
             {
                 mainWindow.SwitchView(view);
+            }
+        }
+
+        private void CloseOverlayOrSwitchRoot(UIElement fallbackView)
+        {
+            _viewModel.NavigationRequested -= HandleNavigationRequested;
+
+            if (Parent is ContentControl contentControl &&
+                contentControl.Parent is Border border &&
+                border.Name == "SubViewContainer")
+            {
+                contentControl.Content = null;
+                border.Visibility = Visibility.Collapsed;
+                return;
+            }
+
+            if (Parent is Grid parentGrid && parentGrid.Parent is MainWindow mainWindow)
+            {
+                mainWindow.SwitchView(fallbackView);
             }
         }
     }

@@ -40,43 +40,43 @@ namespace SecureVault.ViewModel
             var account = VaultSession.CurrentAccount;
             if (account == null)
             {
-                ErrorMessage = "Brak aktywnej sesji uzytkownika.";
+                ErrorMessage = "No active user session.";
                 return;
             }
 
             if (!PasswordService.VerifyPassword(CurrentPassword, account.Password))
             {
-                ErrorMessage = "Aktualne haslo jest niepoprawne.";
+                ErrorMessage = "The current password is incorrect.";
                 return;
             }
 
             if (string.IsNullOrWhiteSpace(NewPassword) || NewPassword.Length < 8)
             {
-                ErrorMessage = "Nowe haslo musi miec co najmniej 8 znakow.";
+                ErrorMessage = "The new password must be at least 8 characters long.";
                 return;
             }
 
             if (NewPassword != ConfirmPassword)
             {
-                ErrorMessage = "Nowe hasla nie sa takie same.";
+                ErrorMessage = "The new passwords do not match.";
                 return;
             }
 
             if (NewPassword == CurrentPassword)
             {
-                ErrorMessage = "Nowe haslo musi roznic sie od aktualnego.";
+                ErrorMessage = "The new password must be different from the current password.";
                 return;
             }
 
             try
             {
                 await VaultSession.ChangePasswordAsync(NewPassword);
-                MessageBox.Show("Haslo konta zostalo zmienione.", "Settings", MessageBoxButton.OK, MessageBoxImage.Information);
+                MessageBox.Show("Account password has been changed.", "Settings", MessageBoxButton.OK, MessageBoxImage.Information);
                 BackRequested?.Invoke();
             }
             catch (Exception ex)
             {
-                ErrorMessage = $"Nie udalo sie zmienic hasla: {ex.Message}";
+                ErrorMessage = $"Could not change the password: {ex.Message}";
             }
         }
 

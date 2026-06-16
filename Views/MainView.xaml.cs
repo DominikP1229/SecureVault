@@ -35,18 +35,25 @@ namespace SecureVault.Views
             switch (target)
             {
                 case MainNavigationTarget.Main:
-                    SwitchRoot(new MainView(_viewModel));
+                    if (SubViewContainer.Visibility == System.Windows.Visibility.Visible)
+                    {
+                        CloseOverlay();
+                    }
+                    else
+                    {
+                        SwitchRoot(new MainView(_viewModel));
+                    }
                     break;
                 case MainNavigationTarget.Login:
                     SwitchRoot(new LoginView());
                     break;
                 case MainNavigationTarget.CredentialForm:
-                    SwitchRoot(new AddPasswordView(_viewModel));
+                    ShowOverlay(new AddPasswordView(_viewModel));
                     break;
                 case MainNavigationTarget.CredentialDetails:
                     if (_viewModel.SelectedCredential != null)
                     {
-                        SwitchRoot(new PasswordDetailsView(_viewModel, _viewModel.SelectedCredential));
+                        ShowOverlay(new PasswordDetailsView(_viewModel, _viewModel.SelectedCredential));
                     }
                     break;
                 case MainNavigationTarget.History:
@@ -75,6 +82,12 @@ namespace SecureVault.Views
         {
             SubViewContent.Content = view;
             SubViewContainer.Visibility = System.Windows.Visibility.Visible;
+        }
+
+        private void CloseOverlay()
+        {
+            SubViewContent.Content = null;
+            SubViewContainer.Visibility = System.Windows.Visibility.Collapsed;
         }
     }
 }

@@ -31,24 +31,24 @@ namespace SecureVault.ViewModel
         {
             if (string.IsNullOrEmpty(Credential.EncryptedPassword))
             {
-                MessageBox.Show("Ten wpis nie ma zapisanego hasla.", "Kopiowanie", MessageBoxButton.OK, MessageBoxImage.Information);
+                MessageBox.Show("This entry does not have a saved password.", "Copy", MessageBoxButton.OK, MessageBoxImage.Information);
                 return;
             }
 
             Clipboard.SetText(Credential.EncryptedPassword);
-            MessageBox.Show("Haslo skopiowane do schowka.", "Kopiowanie", MessageBoxButton.OK, MessageBoxImage.Information);
+            MessageBox.Show("Password copied to clipboard.", "Copy", MessageBoxButton.OK, MessageBoxImage.Information);
         }
 
         private void CopyUrl()
         {
             if (string.IsNullOrEmpty(Credential.Account))
             {
-                MessageBox.Show("Ten wpis nie ma zapisanego URL.", "Kopiowanie", MessageBoxButton.OK, MessageBoxImage.Information);
+                MessageBox.Show("This entry does not have a saved URL.", "Copy", MessageBoxButton.OK, MessageBoxImage.Information);
                 return;
             }
 
             Clipboard.SetText(Credential.Account);
-            MessageBox.Show("URL skopiowany do schowka.", "Kopiowanie", MessageBoxButton.OK, MessageBoxImage.Information);
+            MessageBox.Show("URL copied to clipboard.", "Copy", MessageBoxButton.OK, MessageBoxImage.Information);
         }
 
         private void EditPassword()

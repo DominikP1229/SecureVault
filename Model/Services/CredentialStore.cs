@@ -29,21 +29,6 @@ namespace SecureVault.Model.Services
             return new ObservableCollection<Credential>(credentials);
         }
 
-        public static async Task<string[]> GetExpiredPasswordReminderTitlesAsync()
-        {
-            var account = VaultSession.CurrentAccount ?? throw new InvalidOperationException("Vault session is not initialized.");
-
-            await using var dbContext = await DatabaseService.CreateContextAsync();
-            return await dbContext.Credentials
-                .Where(credential =>
-                    credential.OwnerAccountId == account.Id &&
-                    credential.PasswordReminderEnabled &&
-                    credential.LastPasswordChangedAt.AddMonths(credential.PasswordReminderMonths) <= DateTime.Now)
-                .OrderBy(credential => credential.Title)
-                .Select(credential => credential.Title)
-                .ToArrayAsync();
-        }
-
         public static async Task AddAsync(Credential credential)
         {
             var encryption = VaultSession.RequireEncryption();
@@ -75,7 +60,9 @@ namespace SecureVault.Model.Services
             dbCredential.PasswordReminderEnabled = credential.PasswordReminderEnabled;
             dbCredential.PasswordReminderMonths = credential.PasswordReminderMonths;
             dbCredential.LastPasswordChangedAt = credential.LastPasswordChangedAt;
+            dbCredential.ModifiedDate = DateTime.Now;
             dbCredential.EncryptedPassword = encryption.Encrypt(credential.EncryptedPassword);
+            credential.ModifiedDate = dbCredential.ModifiedDate;
             await dbContext.SaveChangesAsync();
             await PasswordHistoryStore.AddAsync(credential, "Edited");
         }
@@ -124,7 +111,9 @@ namespace SecureVault.Model.Services
                 Description = credential.Description,
                 PasswordReminderEnabled = credential.PasswordReminderEnabled,
                 PasswordReminderMonths = credential.PasswordReminderMonths,
-                LastPasswordChangedAt = credential.LastPasswordChangedAt
+                LastPasswordChangedAt = credential.LastPasswordChangedAt,
+                CreatedDate = credential.CreatedDate,
+                ModifiedDate = credential.ModifiedDate
             };
         }
     }

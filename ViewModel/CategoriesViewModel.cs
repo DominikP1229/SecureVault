@@ -57,19 +57,19 @@ namespace SecureVault.ViewModel
 
             if (string.IsNullOrWhiteSpace(categoryType))
             {
-                MessageBox.Show("Nazwa kategorii jest wymagana.", "Kategorie", MessageBoxButton.OK, MessageBoxImage.Warning);
+                MessageBox.Show("Category name is required.", "Categories", MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
 
             if (categoryType.Length < 2)
             {
-                MessageBox.Show("Nazwa kategorii musi miec co najmniej 2 znaki.", "Kategorie", MessageBoxButton.OK, MessageBoxImage.Warning);
+                MessageBox.Show("Category name must be at least 2 characters long.", "Categories", MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
 
             if (CategoryStore.Exists(categoryType))
             {
-                MessageBox.Show("Taka kategoria juz istnieje.", "Kategorie", MessageBoxButton.OK, MessageBoxImage.Warning);
+                MessageBox.Show("This category already exists.", "Categories", MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
 
@@ -81,13 +81,13 @@ namespace SecureVault.ViewModel
         {
             if (SelectedCategory == null)
             {
-                MessageBox.Show("Wybierz kategorie do usuniecia.", "Kategorie", MessageBoxButton.OK, MessageBoxImage.Information);
+                MessageBox.Show("Select a category to delete.", "Categories", MessageBoxButton.OK, MessageBoxImage.Information);
                 return;
             }
 
             if (_mainViewModel.Credentials.Any(credential => credential.Category == SelectedCategory.CategoryType))
             {
-                MessageBox.Show("Nie mozna usunac kategorii uzywanej przez zapisane hasla.", "Kategorie", MessageBoxButton.OK, MessageBoxImage.Warning);
+                MessageBox.Show("Cannot delete a category used by saved passwords.", "Categories", MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
 

@@ -15,15 +15,6 @@ namespace SecureVault.ViewModel
 
         public ObservableCollection<Account> Accounts => AccountStore.Accounts;
         public Account? SelectedAccount { get; set; }
-        public string Password
-        {
-            get => _password;
-            set
-            {
-                _password = value;
-                OnPropertyChanged();
-            }
-        }
         public AsyncRelayCommand<string> LoginCommand { get; }
         public RelayCommand OpenRegisterCommand { get; }
 
@@ -36,23 +27,33 @@ namespace SecureVault.ViewModel
             OpenRegisterCommand = new RelayCommand(() => NavigationRequested?.Invoke(LoginNavigationTarget.Register));
         }
 
+        public string Password
+        {
+            get => _password;
+            set
+            {
+                _password = value;
+                OnPropertyChanged();
+            }
+        }
+
         private async Task LoginAsync(string? password)
         {
             if (SelectedAccount == null)
             {
-                MessageBox.Show("Wybierz konto.", "Logowanie", MessageBoxButton.OK, MessageBoxImage.Warning);
+                MessageBox.Show("Select an account.", "Login", MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
 
             if (string.IsNullOrWhiteSpace(password))
             {
-                MessageBox.Show("Podaj hasło.", "Logowanie", MessageBoxButton.OK, MessageBoxImage.Warning);
+                MessageBox.Show("Enter a password.", "Login", MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
 
             if (!PasswordService.VerifyPassword(password, SelectedAccount.Password))
             {
-                MessageBox.Show("Niepoprawne hasło.", "Logowanie", MessageBoxButton.OK, MessageBoxImage.Warning);
+                MessageBox.Show("Incorrect password.", "Login", MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
 
@@ -62,12 +63,11 @@ namespace SecureVault.ViewModel
             }
 
             VaultSession.SignIn(SelectedAccount, password);
-            await ShowPasswordReminderIfNeededAsync(SelectedAccount);
-            await ShowCredentialPasswordRemindersIfNeededAsync();
+            await ShowAccountPasswordReminderIfNeededAsync(SelectedAccount);
             NavigationRequested?.Invoke(LoginNavigationTarget.Main);
         }
 
-        private static async Task ShowPasswordReminderIfNeededAsync(Account account)
+        private static async Task ShowAccountPasswordReminderIfNeededAsync(Account account)
         {
             var settings = await AccountSettingsStore.GetOrCreateAsync(account.Id);
             if (!AccountSettingsStore.ShouldRemind(settings))
@@ -76,23 +76,8 @@ namespace SecureVault.ViewModel
             }
 
             MessageBox.Show(
-                $"Minął ustawiony okres przypomnienia o zmianie hasła ({settings.PasswordReminderMonths} mies.). Możesz zmienić hasło w Settings.",
-                "Przypomnienie o zmianie hasła",
-                MessageBoxButton.OK,
-                MessageBoxImage.Information);
-        }
-
-        private static async Task ShowCredentialPasswordRemindersIfNeededAsync()
-        {
-            var expiredTitles = await CredentialStore.GetExpiredPasswordReminderTitlesAsync();
-            if (expiredTitles.Length == 0)
-            {
-                return;
-            }
-
-            MessageBox.Show(
-                "Warto zmienić hasła dla tych wpisów:\n\n" + string.Join("\n", expiredTitles),
-                "Przypomnienie o zapisanych hasłach",
+                $"The configured password change reminder interval has passed ({settings.PasswordReminderMonths} months). You can change your password in Settings.",
+                "Password change reminder",
                 MessageBoxButton.OK,
                 MessageBoxImage.Information);
         }

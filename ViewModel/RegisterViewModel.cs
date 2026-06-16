@@ -38,31 +38,31 @@ namespace SecureVault.ViewModel
 
             if (string.IsNullOrWhiteSpace(login))
             {
-                MessageBox.Show("Login jest wymagany.", "Rejestracja", MessageBoxButton.OK, MessageBoxImage.Warning);
+                MessageBox.Show("Login is required.", "Registration", MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
 
             if (login.Length < 3)
             {
-                MessageBox.Show("Login musi mieć co najmniej 3 znaki.", "Rejestracja", MessageBoxButton.OK, MessageBoxImage.Warning);
+                MessageBox.Show("Login must be at least 3 characters long.", "Registration", MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
 
             if (string.IsNullOrWhiteSpace(password))
             {
-                MessageBox.Show("Hasło jest wymagane.", "Rejestracja", MessageBoxButton.OK, MessageBoxImage.Warning);
+                MessageBox.Show("Password is required.", "Registration", MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
 
             if (password.Length < 8)
             {
-                MessageBox.Show("Hasło musi mieć co najmniej 8 znaków.", "Rejestracja", MessageBoxButton.OK, MessageBoxImage.Warning);
+                MessageBox.Show("Password must be at least 8 characters long.", "Registration", MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
 
             if (AccountStore.Exists(login))
             {
-                MessageBox.Show("Konto o takim loginie już istnieje.", "Rejestracja", MessageBoxButton.OK, MessageBoxImage.Warning);
+                MessageBox.Show("An account with this login already exists.", "Registration", MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
 
