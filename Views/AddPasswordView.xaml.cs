@@ -1,7 +1,6 @@
 using SecureVault.ViewModel;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Input;
 
 namespace SecureVault.Views
 {
@@ -28,20 +27,6 @@ namespace SecureVault.Views
             _viewModel.IsEditMode = isEditMode;
         }
 
-        private void AddPasswordView_KeyDown(object sender, KeyEventArgs e)
-        {
-            if (e.Key == Key.Escape)
-            {
-                _viewModel.CancelCredentialFormCommand.Execute(null);
-                e.Handled = true;
-            }
-            else if (e.Key == Key.Enter && Keyboard.Modifiers == ModifierKeys.Control)
-            {
-                _viewModel.SaveCredentialCommand.Execute(null);
-                e.Handled = true;
-            }
-        }
-
         private void HandleNavigationRequested(MainNavigationTarget target)
         {
             switch (target)
@@ -63,6 +48,7 @@ namespace SecureVault.Views
                 case MainNavigationTarget.History:
                 case MainNavigationTarget.Categories:
                 case MainNavigationTarget.Settings:
+                case MainNavigationTarget.ChangePassword:
                     break;
             }
         }

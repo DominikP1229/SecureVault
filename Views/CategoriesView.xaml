@@ -1,8 +1,11 @@
 <UserControl x:Class="SecureVault.Views.CategoriesView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             Background="Transparent"
-             KeyDown="CategoriesView_KeyDown">
+             Background="Transparent">
+    <UserControl.InputBindings>
+        <KeyBinding Key="Enter" Command="{Binding AddCategoryCommand}"/>
+        <KeyBinding Key="Escape" Command="{Binding CloseCommand}"/>
+    </UserControl.InputBindings>
     <Border Style="{StaticResource PanelCard}"
             Width="460">
         <StackPanel>

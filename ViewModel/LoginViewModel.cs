@@ -63,23 +63,7 @@ namespace SecureVault.ViewModel
             }
 
             VaultSession.SignIn(SelectedAccount, password);
-            await ShowAccountPasswordReminderIfNeededAsync(SelectedAccount);
             NavigationRequested?.Invoke(LoginNavigationTarget.Main);
-        }
-
-        private static async Task ShowAccountPasswordReminderIfNeededAsync(Account account)
-        {
-            var settings = await AccountSettingsStore.GetOrCreateAsync(account.Id);
-            if (!AccountSettingsStore.ShouldRemind(settings))
-            {
-                return;
-            }
-
-            MessageBox.Show(
-                $"The configured password change reminder interval has passed ({settings.PasswordReminderMonths} months). You can change your password in Settings.",
-                "Password change reminder",
-                MessageBoxButton.OK,
-                MessageBoxImage.Information);
         }
 
         public event PropertyChangedEventHandler? PropertyChanged;

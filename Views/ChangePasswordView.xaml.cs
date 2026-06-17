@@ -1,32 +1,24 @@
 using SecureVault.ViewModel;
 using System.Windows.Controls;
-using System.Windows.Input;
 
 namespace SecureVault.Views
 {
     public partial class ChangePasswordView : UserControl
     {
         private readonly ChangePasswordViewModel _viewModel = new();
+        private readonly bool _returnToSettings;
 
         public ChangePasswordView()
+            : this(true)
         {
-            InitializeComponent();
-            DataContext = _viewModel;
-            _viewModel.BackRequested += NavigateBack;
         }
 
-        private void ChangePasswordView_KeyDown(object sender, KeyEventArgs e)
+        public ChangePasswordView(bool returnToSettings)
         {
-            if (e.Key == Key.Enter)
-            {
-                _viewModel.SaveCommand.Execute(null);
-                e.Handled = true;
-            }
-            else if (e.Key == Key.Escape)
-            {
-                _viewModel.BackCommand.Execute(null);
-                e.Handled = true;
-            }
+            InitializeComponent();
+            _returnToSettings = returnToSettings;
+            DataContext = _viewModel;
+            _viewModel.BackRequested += NavigateBack;
         }
 
         private void NavigateBack()
@@ -35,7 +27,19 @@ namespace SecureVault.Views
 
             if (this.Parent is ContentControl contentControl)
             {
-                contentControl.Content = new SettingsView();
+                if (_returnToSettings)
+                {
+                    contentControl.Content = new SettingsView();
+                    return;
+                }
+
+                contentControl.Content = null;
+
+                if (contentControl.Parent is System.Windows.Controls.Border border &&
+                    border.Name == "SubViewContainer")
+                {
+                    border.Visibility = System.Windows.Visibility.Collapsed;
+                }
             }
         }
     }

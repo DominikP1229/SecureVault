@@ -2,8 +2,10 @@
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="clr-namespace:SecureVault.ViewModel"
-             Background="{StaticResource AppBackgroundBrush}"
-             KeyDown="LoginView_KeyDown">
+             Background="{StaticResource AppBackgroundBrush}">
+    <UserControl.InputBindings>
+        <KeyBinding Key="Enter" Command="{Binding LoginCommand}"/>
+    </UserControl.InputBindings>
     <Grid>
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="1.15*"/>
@@ -42,8 +44,7 @@
                     <TextBlock Text="Password" Style="{StaticResource FieldLabelText}"/>
                     <PasswordBox x:Name="PasswordBox"
                                  vm:PasswordBoxBinding.BindPassword="True"
-                                 vm:PasswordBoxBinding.BoundPassword="{Binding Password, Mode=TwoWay}"
-                                 KeyDown="PasswordBox_KeyDown"/>
+                                 vm:PasswordBoxBinding.BoundPassword="{Binding Password, Mode=TwoWay}"/>
 
                     <Button Content="Sign in"
                             Style="{StaticResource PrimaryButton}"

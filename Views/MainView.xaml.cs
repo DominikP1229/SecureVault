@@ -1,6 +1,5 @@
 using SecureVault.ViewModel;
 using System.Windows.Controls;
-using System.Windows.Input;
 
 namespace SecureVault.Views
 {
@@ -20,14 +19,6 @@ namespace SecureVault.Views
             DataContext = _viewModel;
             _viewModel.NavigationRequested += HandleNavigationRequested;
             _ = _viewModel.LoadCredentialsAsync();
-        }
-
-        private void PasswordGrid_MouseDoubleClick(object sender, MouseButtonEventArgs e)
-        {
-            if (_viewModel.OpenDetailsCommand.CanExecute(null))
-            {
-                _viewModel.OpenDetailsCommand.Execute(null);
-            }
         }
 
         private void HandleNavigationRequested(MainNavigationTarget target)
@@ -64,6 +55,9 @@ namespace SecureVault.Views
                     break;
                 case MainNavigationTarget.Settings:
                     ShowOverlay(new SettingsView());
+                    break;
+                case MainNavigationTarget.ChangePassword:
+                    ShowOverlay(new ChangePasswordView(false));
                     break;
             }
         }

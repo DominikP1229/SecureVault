@@ -1,7 +1,6 @@
 using SecureVault.ViewModel;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Input;
 
 namespace SecureVault.Views
 {
@@ -15,20 +14,6 @@ namespace SecureVault.Views
             DataContext = _viewModel;
             _viewModel.CloseRequested += CloseSubView;
             _viewModel.ChangePasswordRequested += OpenChangePasswordView;
-        }
-
-        private void SettingsView_KeyDown(object sender, KeyEventArgs e)
-        {
-            if (e.Key == Key.Escape)
-            {
-                _viewModel.CloseCommand.Execute(null);
-                e.Handled = true;
-            }
-            else if (e.Key == Key.Enter)
-            {
-                _viewModel.SaveReminderSettingsCommand.Execute(null);
-                e.Handled = true;
-            }
         }
 
         private void OpenChangePasswordView()

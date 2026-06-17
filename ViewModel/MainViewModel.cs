@@ -17,6 +17,8 @@ namespace SecureVault.ViewModel
         private readonly PasswordStrengthService _passwordStrengthService = new();
         private readonly IFileDialogService _fileDialogService;
         private bool _isEditMode;
+        private bool _accountPasswordReminderVisible;
+        private string _accountPasswordReminderMessage = string.Empty;
 
         public ObservableCollection<Credential> Credentials { get; set; } = new();
         public ObservableCollection<Category> Categories => CategoryStore.Categories;
@@ -24,6 +26,22 @@ namespace SecureVault.ViewModel
         public ObservableCollection<Category> FilterCategories { get; } = new()
         {
             new Category { CategoryType = "All" }
+        };
+
+        public ObservableCollection<string> SortFields { get; } = new()
+        {
+            "Title",
+            "Category",
+            "Username",
+            "Website",
+            "Next reminder",
+            "Modified date"
+        };
+
+        public ObservableCollection<string> SortDirections { get; } = new()
+        {
+            "Ascending",
+            "Descending"
         };
 
         public ICollectionView? FilteredCredentials { get; private set; }
@@ -49,6 +67,42 @@ namespace SecureVault.ViewModel
                 _searchText = value;
                 OnPropertyChanged();
                 FilteredCredentials?.Refresh();
+            }
+        }
+
+        private string _primarySortField = "Title";
+        public string PrimarySortField
+        {
+            get => _primarySortField;
+            set
+            {
+                _primarySortField = value;
+                OnPropertyChanged();
+                ApplySorting();
+            }
+        }
+
+        private string _secondarySortField = "Category";
+        public string SecondarySortField
+        {
+            get => _secondarySortField;
+            set
+            {
+                _secondarySortField = value;
+                OnPropertyChanged();
+                ApplySorting();
+            }
+        }
+
+        private string _sortDirection = "Ascending";
+        public string SortDirection
+        {
+            get => _sortDirection;
+            set
+            {
+                _sortDirection = value;
+                OnPropertyChanged();
+                ApplySorting();
             }
         }
 
@@ -171,6 +225,8 @@ namespace SecureVault.ViewModel
         public RelayCommand<Credential> CopyCredentialCommand { get; }
         public AsyncRelayCommand<Credential> DeleteCredentialCommand { get; }
         public RelayCommand<Credential> EditCredentialCommand { get; }
+        public RelayCommand DismissAccountPasswordReminderCommand { get; }
+        public RelayCommand OpenChangePasswordFromReminderCommand { get; }
 
         public event Action<MainNavigationTarget>? NavigationRequested;
 
@@ -180,6 +236,26 @@ namespace SecureVault.ViewModel
             set
             {
                 _isEditMode = value;
+                OnPropertyChanged();
+            }
+        }
+
+        public bool AccountPasswordReminderVisible
+        {
+            get => _accountPasswordReminderVisible;
+            set
+            {
+                _accountPasswordReminderVisible = value;
+                OnPropertyChanged();
+            }
+        }
+
+        public string AccountPasswordReminderMessage
+        {
+            get => _accountPasswordReminderMessage;
+            set
+            {
+                _accountPasswordReminderMessage = value;
                 OnPropertyChanged();
             }
         }
@@ -242,9 +318,12 @@ namespace SecureVault.ViewModel
             CopyCredentialCommand = new RelayCommand<Credential>(CopyCredential);
             DeleteCredentialCommand = new AsyncRelayCommand<Credential>(DeleteCredentialAsync);
             EditCredentialCommand = new RelayCommand<Credential>(EditCredential);
+            DismissAccountPasswordReminderCommand = new RelayCommand(DismissAccountPasswordReminder);
+            OpenChangePasswordFromReminderCommand = new RelayCommand(OpenChangePasswordFromReminder);
 
             FilteredCredentials = CollectionViewSource.GetDefaultView(Credentials);
             FilteredCredentials.Filter = FilterCredential;
+            ApplySorting();
             SelectedFilterCategory = FilterCategories.FirstOrDefault();
         }
 
@@ -253,8 +332,10 @@ namespace SecureVault.ViewModel
             Credentials = await CredentialStore.LoadAsync();
             FilteredCredentials = CollectionViewSource.GetDefaultView(Credentials);
             FilteredCredentials.Filter = FilterCredential;
+            ApplySorting();
             OnPropertyChanged(nameof(Credentials));
             OnPropertyChanged(nameof(FilteredCredentials));
+            await LoadAccountPasswordReminderAsync();
         }
 
         private void GeneratePassword()
@@ -294,6 +375,38 @@ namespace SecureVault.ViewModel
         {
             VaultSession.SignOut();
             NavigationRequested?.Invoke(MainNavigationTarget.Login);
+        }
+
+        private async Task LoadAccountPasswordReminderAsync()
+        {
+            var account = VaultSession.CurrentAccount;
+            if (account == null)
+            {
+                AccountPasswordReminderVisible = false;
+                return;
+            }
+
+            var settings = await AccountSettingsStore.GetOrCreateAsync(account.Id);
+            if (!AccountSettingsStore.ShouldRemind(settings))
+            {
+                AccountPasswordReminderVisible = false;
+                return;
+            }
+
+            AccountPasswordReminderMessage =
+                $"The configured account password change reminder interval has passed ({settings.PasswordReminderMonths} months).";
+            AccountPasswordReminderVisible = true;
+        }
+
+        private void DismissAccountPasswordReminder()
+        {
+            AccountPasswordReminderVisible = false;
+        }
+
+        private void OpenChangePasswordFromReminder()
+        {
+            AccountPasswordReminderVisible = false;
+            NavigationRequested?.Invoke(MainNavigationTarget.ChangePassword);
         }
 
         private async Task SaveCredentialAsync()
@@ -477,6 +590,44 @@ namespace SecureVault.ViewModel
                 || credential.Account.Contains(searchText, StringComparison.OrdinalIgnoreCase);
         }
 
+        private void ApplySorting()
+        {
+            if (FilteredCredentials == null)
+            {
+                return;
+            }
+
+            FilteredCredentials.SortDescriptions.Clear();
+
+            var direction = SortDirection == "Descending"
+                ? ListSortDirection.Descending
+                : ListSortDirection.Ascending;
+
+            AddSortDescription(PrimarySortField, direction);
+
+            if (!string.Equals(PrimarySortField, SecondarySortField, StringComparison.Ordinal))
+            {
+                AddSortDescription(SecondarySortField, direction);
+            }
+
+            FilteredCredentials.Refresh();
+        }
+
+        private void AddSortDescription(string field, ListSortDirection direction)
+        {
+            var propertyName = field switch
+            {
+                "Category" => nameof(Credential.Category),
+                "Username" => nameof(Credential.Username),
+                "Website" => nameof(Credential.Account),
+                "Next reminder" => nameof(Credential.NextPasswordReminderDate),
+                "Modified date" => nameof(Credential.ModifiedDate),
+                _ => nameof(Credential.Title)
+            };
+
+            FilteredCredentials?.SortDescriptions.Add(new SortDescription(propertyName, direction));
+        }
+
         private async Task AddAsync()
         {
             ErrorMessage = string.Empty;
@@ -652,6 +803,7 @@ namespace SecureVault.ViewModel
         CredentialDetails,
         History,
         Categories,
-        Settings
+        Settings,
+        ChangePassword
     }
 }

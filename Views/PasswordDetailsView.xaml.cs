@@ -2,7 +2,6 @@ using SecureVault.Model;
 using SecureVault.ViewModel;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Input;
 
 namespace SecureVault.Views
 {
@@ -18,15 +17,6 @@ namespace SecureVault.Views
             _viewModel = new PasswordDetailsViewModel(mainViewModel, credential);
             DataContext = _viewModel;
             _viewModel.NavigationRequested += HandleNavigationRequested;
-        }
-
-        private void PasswordDetailsView_KeyDown(object sender, KeyEventArgs e)
-        {
-            if (e.Key == Key.Escape)
-            {
-                _viewModel.BackCommand.Execute(null);
-                e.Handled = true;
-            }
         }
 
         private void HandleNavigationRequested(PasswordDetailsNavigationTarget target)
