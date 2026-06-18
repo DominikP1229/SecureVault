@@ -1,4 +1,5 @@
 using SecureVault.ViewModel;
+using System.Windows;
 using System.Windows.Controls;
 
 namespace SecureVault.Views
@@ -18,7 +19,7 @@ namespace SecureVault.Views
         {
             _viewModel.BackToLoginRequested -= HandleBackToLoginRequested;
 
-            if (this.Parent is Grid parentGrid && parentGrid.Parent is MainWindow mainWindow)
+            if (Window.GetWindow(this) is MainWindow mainWindow)
             {
                 mainWindow.SwitchView(new LoginView());
             }

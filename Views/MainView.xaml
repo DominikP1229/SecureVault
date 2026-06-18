@@ -46,7 +46,8 @@
                 </Grid.RowDefinitions>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="220"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="170"/>
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
 
@@ -54,13 +55,19 @@
                          MinWidth="280"
                          Margin="0,0,12,0"/>
 
-                <ComboBox Grid.Column="1"
-                          ItemsSource="{Binding FilterCategories}"
-                          SelectedItem="{Binding SelectedFilterCategory}"
-                          DisplayMemberPath="CategoryType"
+                <TextBlock Grid.Column="1"
+                           Text="Search in"
+                           VerticalAlignment="Center"
+                           Foreground="{StaticResource TextSecondaryBrush}"
+                           FontWeight="SemiBold"
+                           Margin="0,0,8,0"/>
+
+                <ComboBox Grid.Column="2"
+                          ItemsSource="{Binding SearchFields}"
+                          SelectedItem="{Binding SelectedSearchField}"
                           Margin="0,0,12,0"/>
 
-                <StackPanel Grid.Column="2"
+                <StackPanel Grid.Column="3"
                             Orientation="Horizontal">
                     <Button Content="Add"
                             Width="86"
@@ -152,6 +159,9 @@
                     <DataGridTextColumn Header="Next reminder"
                                         Binding="{Binding NextPasswordReminderDate, StringFormat={}{0:yyyy-MM-dd}, TargetNullValue=-}"
                                         Width="130"/>
+                    <DataGridTextColumn Header="Modified"
+                                        Binding="{Binding ModifiedDate, StringFormat={}{0:yyyy-MM-dd}}"
+                                        Width="115"/>
                     <DataGridTemplateColumn Header="Actions" Width="210">
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>

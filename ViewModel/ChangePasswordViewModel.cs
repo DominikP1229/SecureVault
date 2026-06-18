@@ -3,7 +3,6 @@ using System;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
-using System.Windows;
 
 namespace SecureVault.ViewModel
 {
@@ -71,7 +70,7 @@ namespace SecureVault.ViewModel
             try
             {
                 await VaultSession.ChangePasswordAsync(NewPassword);
-                MessageBox.Show("Account password has been changed.", "Settings", MessageBoxButton.OK, MessageBoxImage.Information);
+                await NotificationService.ShowInformationAsync("Settings", "Account password has been changed.");
                 BackRequested?.Invoke();
             }
             catch (Exception ex)

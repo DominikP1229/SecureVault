@@ -23,13 +23,19 @@ namespace SecureVault.ViewModel
         public ObservableCollection<Credential> Credentials { get; set; } = new();
         public ObservableCollection<Category> Categories => CategoryStore.Categories;
 
-        public ObservableCollection<Category> FilterCategories { get; } = new()
-        {
-            new Category { CategoryType = "All" }
-        };
-
         public ObservableCollection<string> SortFields { get; } = new()
         {
+            "Title",
+            "Category",
+            "Username",
+            "Website",
+            "Next reminder",
+            "Modified date"
+        };
+
+        public ObservableCollection<string> SearchFields { get; } = new()
+        {
+            "All",
             "Title",
             "Category",
             "Username",
@@ -46,18 +52,6 @@ namespace SecureVault.ViewModel
 
         public ICollectionView? FilteredCredentials { get; private set; }
 
-        private Category? _selectedFilterCategory;
-        public Category? SelectedFilterCategory
-        {
-            get => _selectedFilterCategory;
-            set
-            {
-                _selectedFilterCategory = value;
-                OnPropertyChanged();
-                FilteredCredentials?.Refresh();
-            }
-        }
-
         private string _searchText = string.Empty;
         public string SearchText
         {
@@ -65,6 +59,18 @@ namespace SecureVault.ViewModel
             set
             {
                 _searchText = value;
+                OnPropertyChanged();
+                FilteredCredentials?.Refresh();
+            }
+        }
+
+        private string _selectedSearchField = "All";
+        public string SelectedSearchField
+        {
+            get => _selectedSearchField;
+            set
+            {
+                _selectedSearchField = value;
                 OnPropertyChanged();
                 FilteredCredentials?.Refresh();
             }
@@ -212,7 +218,7 @@ namespace SecureVault.ViewModel
         public AsyncRelayCommand EditCommand { get; }
         public RelayCommand GeneratePasswordCommand { get; }
         public RelayCommand OpenAddCommand { get; }
-        public RelayCommand OpenEditCommand { get; }
+        public AsyncRelayCommand OpenEditCommand { get; }
         public RelayCommand OpenDetailsCommand { get; }
         public RelayCommand OpenHistoryCommand { get; }
         public RelayCommand OpenCategoriesCommand { get; }
@@ -222,9 +228,9 @@ namespace SecureVault.ViewModel
         public AsyncRelayCommand ImportCsvCommand { get; }
         public AsyncRelayCommand ExportCsvCommand { get; }
         public RelayCommand CancelCredentialFormCommand { get; }
-        public RelayCommand<Credential> CopyCredentialCommand { get; }
+        public AsyncRelayCommand<Credential> CopyCredentialCommand { get; }
         public AsyncRelayCommand<Credential> DeleteCredentialCommand { get; }
-        public RelayCommand<Credential> EditCredentialCommand { get; }
+        public AsyncRelayCommand<Credential> EditCredentialCommand { get; }
         public RelayCommand DismissAccountPasswordReminderCommand { get; }
         public RelayCommand OpenChangePasswordFromReminderCommand { get; }
 
@@ -269,43 +275,12 @@ namespace SecureVault.ViewModel
         {
             _fileDialogService = fileDialogService;
 
-            foreach (var category in Categories)
-            {
-                FilterCategories.Add(category);
-            }
-
-            Categories.CollectionChanged += (_, e) =>
-            {
-                if (e.NewItems != null)
-                {
-                    foreach (Category category in e.NewItems)
-                    {
-                        FilterCategories.Add(category);
-                    }
-                }
-
-                if (e.OldItems != null)
-                {
-                    foreach (Category category in e.OldItems)
-                    {
-                        FilterCategories.Remove(category);
-
-                        if (SelectedFilterCategory == category)
-                        {
-                            SelectedFilterCategory = FilterCategories.FirstOrDefault();
-                        }
-                    }
-                }
-
-                FilteredCredentials?.Refresh();
-            };
-
             AddCommand = new AsyncRelayCommand(AddAsync);
             DeleteCommand = new AsyncRelayCommand(DeleteAsync, () => SelectedCredential != null);
             EditCommand = new AsyncRelayCommand(EditAsync, () => SelectedCredential != null);
             GeneratePasswordCommand = new RelayCommand(GeneratePassword);
             OpenAddCommand = new RelayCommand(OpenAdd);
-            OpenEditCommand = new RelayCommand(OpenEdit);
+            OpenEditCommand = new AsyncRelayCommand(OpenEditAsync);
             OpenDetailsCommand = new RelayCommand(OpenDetails, () => SelectedCredential != null);
             OpenHistoryCommand = new RelayCommand(() => NavigationRequested?.Invoke(MainNavigationTarget.History));
             OpenCategoriesCommand = new RelayCommand(() => NavigationRequested?.Invoke(MainNavigationTarget.Categories));
@@ -315,16 +290,15 @@ namespace SecureVault.ViewModel
             ImportCsvCommand = new AsyncRelayCommand(ImportCsvAsync);
             ExportCsvCommand = new AsyncRelayCommand(ExportCsvAsync);
             CancelCredentialFormCommand = new RelayCommand(() => NavigationRequested?.Invoke(MainNavigationTarget.Main));
-            CopyCredentialCommand = new RelayCommand<Credential>(CopyCredential);
+            CopyCredentialCommand = new AsyncRelayCommand<Credential>(CopyCredentialAsync);
             DeleteCredentialCommand = new AsyncRelayCommand<Credential>(DeleteCredentialAsync);
-            EditCredentialCommand = new RelayCommand<Credential>(EditCredential);
+            EditCredentialCommand = new AsyncRelayCommand<Credential>(EditCredentialAsync);
             DismissAccountPasswordReminderCommand = new RelayCommand(DismissAccountPasswordReminder);
             OpenChangePasswordFromReminderCommand = new RelayCommand(OpenChangePasswordFromReminder);
 
             FilteredCredentials = CollectionViewSource.GetDefaultView(Credentials);
             FilteredCredentials.Filter = FilterCredential;
             ApplySorting();
-            SelectedFilterCategory = FilterCategories.FirstOrDefault();
         }
 
         public async Task LoadCredentialsAsync()
@@ -351,11 +325,11 @@ namespace SecureVault.ViewModel
             NavigationRequested?.Invoke(MainNavigationTarget.CredentialForm);
         }
 
-        private void OpenEdit()
+        private async Task OpenEditAsync()
         {
             if (SelectedCredential == null)
             {
-                MessageBox.Show("Select an entry to edit.", "Edit", MessageBoxButton.OK, MessageBoxImage.Information);
+                await NotificationService.ShowInformationAsync("Edit", "Select an entry to edit.");
                 return;
             }
 
@@ -467,19 +441,15 @@ namespace SecureVault.ViewModel
                 }
 
                 FilteredCredentials?.Refresh();
-                MessageBox.Show(
-                    $"Import completed. Added: {result.ImportedCount}, skipped: {result.SkippedCount}.",
+                await NotificationService.ShowInformationAsync(
                     "Import CSV",
-                    MessageBoxButton.OK,
-                    MessageBoxImage.Information);
+                    $"Import completed. Added: {result.ImportedCount}, skipped: {result.SkippedCount}.");
             }
             catch (Exception ex)
             {
-                MessageBox.Show(
-                    $"Could not import CSV: {ex.Message}",
+                await NotificationService.ShowErrorAsync(
                     "Import CSV",
-                    MessageBoxButton.OK,
-                    MessageBoxImage.Error);
+                    $"Could not import CSV: {ex.Message}");
             }
         }
 
@@ -487,17 +457,15 @@ namespace SecureVault.ViewModel
         {
             if (Credentials.Count == 0)
             {
-                MessageBox.Show("There are no passwords to export.", "Export CSV", MessageBoxButton.OK, MessageBoxImage.Information);
+                await NotificationService.ShowInformationAsync("Export CSV", "There are no passwords to export.");
                 return;
             }
 
-            var confirmation = MessageBox.Show(
-                "The CSV file will contain plain-text passwords. Save it only in a secure location. Continue?",
+            var confirmation = await NotificationService.ConfirmWarningAsync(
                 "Export CSV",
-                MessageBoxButton.YesNo,
-                MessageBoxImage.Warning);
+                "The CSV file will contain plain-text passwords. Save it only in a secure location. Continue?");
 
-            if (confirmation != MessageBoxResult.Yes)
+            if (confirmation != NotificationResult.Yes)
             {
                 return;
             }
@@ -511,35 +479,33 @@ namespace SecureVault.ViewModel
             try
             {
                 await CredentialCsvService.ExportAsync(Credentials, filePath);
-                MessageBox.Show("CSV export completed.", "Export CSV", MessageBoxButton.OK, MessageBoxImage.Information);
+                await NotificationService.ShowInformationAsync("Export CSV", "CSV export completed.");
             }
             catch (Exception ex)
             {
-                MessageBox.Show(
-                    $"Could not export CSV: {ex.Message}",
+                await NotificationService.ShowErrorAsync(
                     "Export CSV",
-                    MessageBoxButton.OK,
-                    MessageBoxImage.Error);
+                    $"Could not export CSV: {ex.Message}");
             }
         }
 
-        private void CopyCredential(Credential? credential)
+        private async Task CopyCredentialAsync(Credential? credential)
         {
             var credentialToCopy = credential ?? SelectedCredential;
             if (credentialToCopy == null)
             {
-                MessageBox.Show("Select an entry to copy the password from.", "Copy", MessageBoxButton.OK, MessageBoxImage.Information);
+                await NotificationService.ShowInformationAsync("Copy", "Select an entry to copy the password from.");
                 return;
             }
 
             if (string.IsNullOrEmpty(credentialToCopy.EncryptedPassword))
             {
-                MessageBox.Show("The selected entry does not have a saved password.", "Copy", MessageBoxButton.OK, MessageBoxImage.Information);
+                await NotificationService.ShowInformationAsync("Copy", "The selected entry does not have a saved password.");
                 return;
             }
 
             Clipboard.SetText(credentialToCopy.EncryptedPassword);
-            MessageBox.Show("Password copied to clipboard.", "Copy", MessageBoxButton.OK, MessageBoxImage.Information);
+            await NotificationService.ShowInformationAsync("Copy", "Password copied to clipboard.");
         }
 
         private async Task DeleteCredentialAsync(Credential? credential)
@@ -552,14 +518,14 @@ namespace SecureVault.ViewModel
             await DeleteAsync();
         }
 
-        private void EditCredential(Credential? credential)
+        private async Task EditCredentialAsync(Credential? credential)
         {
             if (credential != null)
             {
                 SelectedCredential = credential;
             }
 
-            OpenEdit();
+            await OpenEditAsync();
         }
 
         private bool FilterCredential(object item)
@@ -569,11 +535,7 @@ namespace SecureVault.ViewModel
                 return false;
             }
 
-            var categoryMatches = SelectedFilterCategory == null
-                || SelectedFilterCategory.CategoryType == "All"
-                || credential.Category == SelectedFilterCategory.CategoryType;
-
-            return categoryMatches && MatchesSearch(credential);
+            return MatchesSearch(credential);
         }
 
         private bool MatchesSearch(Credential credential)
@@ -584,10 +546,37 @@ namespace SecureVault.ViewModel
             }
 
             var searchText = SearchText.Trim();
-            return credential.Title.Contains(searchText, StringComparison.OrdinalIgnoreCase)
-                || credential.Username.Contains(searchText, StringComparison.OrdinalIgnoreCase)
-                || credential.Category.Contains(searchText, StringComparison.OrdinalIgnoreCase)
-                || credential.Account.Contains(searchText, StringComparison.OrdinalIgnoreCase);
+            return SelectedSearchField == "All"
+                ? MatchesAnySearchField(credential, searchText)
+                : MatchesSearchField(credential, SelectedSearchField, searchText);
+        }
+
+        private static bool MatchesAnySearchField(Credential credential, string searchText)
+        {
+            return MatchesSearchField(credential, "Title", searchText)
+                || MatchesSearchField(credential, "Category", searchText)
+                || MatchesSearchField(credential, "Username", searchText)
+                || MatchesSearchField(credential, "Website", searchText)
+                || MatchesSearchField(credential, "Next reminder", searchText)
+                || MatchesSearchField(credential, "Modified date", searchText);
+        }
+
+        private static bool MatchesSearchField(Credential credential, string field, string searchText)
+        {
+            return field switch
+            {
+                "Category" => credential.Category.Contains(searchText, StringComparison.OrdinalIgnoreCase),
+                "Username" => credential.Username.Contains(searchText, StringComparison.OrdinalIgnoreCase),
+                "Website" => credential.Account.Contains(searchText, StringComparison.OrdinalIgnoreCase),
+                "Next reminder" => FormatDate(credential.NextPasswordReminderDate).Contains(searchText, StringComparison.OrdinalIgnoreCase),
+                "Modified date" => FormatDate(credential.ModifiedDate).Contains(searchText, StringComparison.OrdinalIgnoreCase),
+                _ => credential.Title.Contains(searchText, StringComparison.OrdinalIgnoreCase)
+            };
+        }
+
+        private static string FormatDate(DateTime? date)
+        {
+            return date.HasValue ? date.Value.ToString("yyyy-MM-dd") : string.Empty;
         }
 
         private void ApplySorting()
@@ -759,10 +748,9 @@ namespace SecureVault.ViewModel
                 return false;
             }
 
-            if (!string.IsNullOrWhiteSpace(Website) &&
-                !Uri.TryCreate(Website.Trim(), UriKind.Absolute, out _))
+            if (!string.IsNullOrWhiteSpace(Website) && !IsValidWebsite(Website))
             {
-                ErrorMessage = "Website must be a valid URL.";
+                ErrorMessage = "Website must be a valid URL or domain.";
                 return false;
             }
 
@@ -775,6 +763,32 @@ namespace SecureVault.ViewModel
             }
 
             return true;
+        }
+
+        private static bool IsValidWebsite(string website)
+        {
+            var value = website.Trim();
+            if (value.Contains(' '))
+            {
+                return false;
+            }
+
+            if (Uri.TryCreate(value, UriKind.Absolute, out var absoluteUri))
+            {
+                return HasValidHost(absoluteUri);
+            }
+
+            return Uri.TryCreate($"https://{value}", UriKind.Absolute, out var normalizedUri) &&
+                HasValidHost(normalizedUri);
+        }
+
+        private static bool HasValidHost(Uri uri)
+        {
+            return (uri.Scheme == Uri.UriSchemeHttp || uri.Scheme == Uri.UriSchemeHttps) &&
+                !string.IsNullOrWhiteSpace(uri.Host) &&
+                uri.Host.Contains('.') &&
+                !uri.Host.StartsWith('.') &&
+                !uri.Host.EndsWith('.');
         }
 
         public void ClearForm()

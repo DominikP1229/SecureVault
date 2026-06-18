@@ -1,4 +1,5 @@
 using SecureVault.ViewModel;
+using System.Windows;
 using System.Windows.Controls;
 
 namespace SecureVault.Views
@@ -66,7 +67,7 @@ namespace SecureVault.Views
         {
             _viewModel.NavigationRequested -= HandleNavigationRequested;
 
-            if (Parent is Grid parentGrid && parentGrid.Parent is MainWindow mainWindow)
+            if (Window.GetWindow(this) is MainWindow mainWindow)
             {
                 mainWindow.SwitchView(view);
             }

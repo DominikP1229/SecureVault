@@ -57,7 +57,7 @@ namespace SecureVault.Views
         {
             _viewModel.NavigationRequested -= HandleNavigationRequested;
 
-            if (Parent is Grid parentGrid && parentGrid.Parent is MainWindow mainWindow)
+            if (Window.GetWindow(this) is MainWindow mainWindow)
             {
                 mainWindow.SwitchView(view);
             }
@@ -76,7 +76,7 @@ namespace SecureVault.Views
                 return;
             }
 
-            if (Parent is Grid parentGrid && parentGrid.Parent is MainWindow mainWindow)
+            if (Window.GetWindow(this) is MainWindow mainWindow)
             {
                 mainWindow.SwitchView(fallbackView);
             }

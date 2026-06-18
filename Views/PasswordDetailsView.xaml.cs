@@ -34,7 +34,7 @@ namespace SecureVault.Views
 
         private void SwitchTo(UIElement view)
         {
-            if (this.Parent is Grid parentGrid && parentGrid.Parent is MainWindow mainWindow)
+            if (Window.GetWindow(this) is MainWindow mainWindow)
             {
                 mainWindow.SwitchView(view);
             }

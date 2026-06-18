@@ -2,6 +2,7 @@ using SecureVault.Model;
 using SecureVault.Model.Services;
 using System;
 using System.Windows;
+using System.Threading.Tasks;
 
 namespace SecureVault.ViewModel
 {
@@ -10,8 +11,8 @@ namespace SecureVault.ViewModel
         private readonly MainViewModel _mainViewModel;
 
         public Credential Credential { get; }
-        public RelayCommand CopyPasswordCommand { get; }
-        public RelayCommand CopyUrlCommand { get; }
+        public AsyncRelayCommand CopyPasswordCommand { get; }
+        public AsyncRelayCommand CopyUrlCommand { get; }
         public RelayCommand EditPasswordCommand { get; }
         public RelayCommand BackCommand { get; }
 
@@ -21,34 +22,34 @@ namespace SecureVault.ViewModel
         {
             _mainViewModel = mainViewModel;
             Credential = credential;
-            CopyPasswordCommand = new RelayCommand(CopyPassword);
-            CopyUrlCommand = new RelayCommand(CopyUrl);
+            CopyPasswordCommand = new AsyncRelayCommand(CopyPasswordAsync);
+            CopyUrlCommand = new AsyncRelayCommand(CopyUrlAsync);
             EditPasswordCommand = new RelayCommand(EditPassword);
             BackCommand = new RelayCommand(() => NavigationRequested?.Invoke(PasswordDetailsNavigationTarget.Main));
         }
 
-        private void CopyPassword()
+        private async Task CopyPasswordAsync()
         {
             if (string.IsNullOrEmpty(Credential.EncryptedPassword))
             {
-                MessageBox.Show("This entry does not have a saved password.", "Copy", MessageBoxButton.OK, MessageBoxImage.Information);
+                await NotificationService.ShowInformationAsync("Copy", "This entry does not have a saved password.");
                 return;
             }
 
             Clipboard.SetText(Credential.EncryptedPassword);
-            MessageBox.Show("Password copied to clipboard.", "Copy", MessageBoxButton.OK, MessageBoxImage.Information);
+            await NotificationService.ShowInformationAsync("Copy", "Password copied to clipboard.");
         }
 
-        private void CopyUrl()
+        private async Task CopyUrlAsync()
         {
             if (string.IsNullOrEmpty(Credential.Account))
             {
-                MessageBox.Show("This entry does not have a saved URL.", "Copy", MessageBoxButton.OK, MessageBoxImage.Information);
+                await NotificationService.ShowInformationAsync("Copy", "This entry does not have a saved URL.");
                 return;
             }
 
             Clipboard.SetText(Credential.Account);
-            MessageBox.Show("URL copied to clipboard.", "Copy", MessageBoxButton.OK, MessageBoxImage.Information);
+            await NotificationService.ShowInformationAsync("Copy", "URL copied to clipboard.");
         }
 
         private void EditPassword()

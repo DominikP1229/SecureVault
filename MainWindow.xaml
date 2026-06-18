@@ -8,5 +8,47 @@
         MinWidth="1040"
         Background="{StaticResource AppBackgroundBrush}"
         WindowStartupLocation="CenterScreen">
-    <Grid x:Name="MainGrid"/>
+    <Grid>
+        <Grid x:Name="MainGrid"/>
+
+        <Border x:Name="NotificationOverlay"
+                Background="#B0000000"
+                Visibility="Collapsed">
+            <Border Style="{StaticResource PanelCard}"
+                    Width="460"
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Center">
+                <StackPanel>
+                    <TextBlock x:Name="NotificationTitleText"
+                               Style="{StaticResource PageTitleText}"/>
+                    <TextBlock x:Name="NotificationMessageText"
+                               Foreground="{StaticResource TextSecondaryBrush}"
+                               TextWrapping="Wrap"
+                               Margin="0,4,0,22"/>
+
+                    <StackPanel x:Name="NotificationOkButtons"
+                                Orientation="Horizontal"
+                                HorizontalAlignment="Right">
+                        <Button Content="OK"
+                                Width="86"
+                                Style="{StaticResource PrimaryButton}"
+                                Click="NotificationOk_Click"/>
+                    </StackPanel>
+
+                    <StackPanel x:Name="NotificationConfirmButtons"
+                                Orientation="Horizontal"
+                                HorizontalAlignment="Right"
+                                Visibility="Collapsed">
+                        <Button Content="No"
+                                Width="86"
+                                Click="NotificationNo_Click"/>
+                        <Button Content="Yes"
+                                Width="86"
+                                Style="{StaticResource PrimaryButton}"
+                                Click="NotificationYes_Click"/>
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+        </Border>
+    </Grid>
 </Window>

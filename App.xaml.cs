@@ -16,11 +16,9 @@ namespace SecureVault
             }
             catch (System.Exception ex)
             {
-                MessageBox.Show(
-                    $"Could not initialize the database: {ex.Message}",
+                await NotificationService.ShowErrorAsync(
                     "Database error",
-                    MessageBoxButton.OK,
-                    MessageBoxImage.Error);
+                    $"Could not initialize the database: {ex.Message}");
                 Shutdown();
                 return;
             }

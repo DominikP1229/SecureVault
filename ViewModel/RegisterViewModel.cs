@@ -3,7 +3,6 @@ using System;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
-using System.Windows;
 
 namespace SecureVault.ViewModel
 {
@@ -38,31 +37,31 @@ namespace SecureVault.ViewModel
 
             if (string.IsNullOrWhiteSpace(login))
             {
-                MessageBox.Show("Login is required.", "Registration", MessageBoxButton.OK, MessageBoxImage.Warning);
+                await NotificationService.ShowWarningAsync("Registration", "Login is required.");
                 return;
             }
 
             if (login.Length < 3)
             {
-                MessageBox.Show("Login must be at least 3 characters long.", "Registration", MessageBoxButton.OK, MessageBoxImage.Warning);
+                await NotificationService.ShowWarningAsync("Registration", "Login must be at least 3 characters long.");
                 return;
             }
 
             if (string.IsNullOrWhiteSpace(password))
             {
-                MessageBox.Show("Password is required.", "Registration", MessageBoxButton.OK, MessageBoxImage.Warning);
+                await NotificationService.ShowWarningAsync("Registration", "Password is required.");
                 return;
             }
 
             if (password.Length < 8)
             {
-                MessageBox.Show("Password must be at least 8 characters long.", "Registration", MessageBoxButton.OK, MessageBoxImage.Warning);
+                await NotificationService.ShowWarningAsync("Registration", "Password must be at least 8 characters long.");
                 return;
             }
 
             if (AccountStore.Exists(login))
             {
-                MessageBox.Show("An account with this login already exists.", "Registration", MessageBoxButton.OK, MessageBoxImage.Warning);
+                await NotificationService.ShowWarningAsync("Registration", "An account with this login already exists.");
                 return;
             }
 

@@ -5,7 +5,6 @@ using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
-using System.Windows;
 
 namespace SecureVault.ViewModel
 {
@@ -41,19 +40,19 @@ namespace SecureVault.ViewModel
         {
             if (SelectedAccount == null)
             {
-                MessageBox.Show("Select an account.", "Login", MessageBoxButton.OK, MessageBoxImage.Warning);
+                await NotificationService.ShowWarningAsync("Login", "Select an account.");
                 return;
             }
 
             if (string.IsNullOrWhiteSpace(password))
             {
-                MessageBox.Show("Enter a password.", "Login", MessageBoxButton.OK, MessageBoxImage.Warning);
+                await NotificationService.ShowWarningAsync("Login", "Enter a password.");
                 return;
             }
 
             if (!PasswordService.VerifyPassword(password, SelectedAccount.Password))
             {
-                MessageBox.Show("Incorrect password.", "Login", MessageBoxButton.OK, MessageBoxImage.Warning);
+                await NotificationService.ShowWarningAsync("Login", "Incorrect password.");
                 return;
             }
 
